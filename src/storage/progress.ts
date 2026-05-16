@@ -1,34 +1,28 @@
-export interface StageResult {
-  bestCpm: number
-  bestAccuracy: number
-  attempts: number
-  lastAt: number
-}
-
-export interface SessionRecord {
+export interface LineRecord {
   at: number
-  stageId: number
+  source: string
   cpm: number
   accuracy: number
+  text: string
 }
 
 export interface UserProgress {
-  stageResults: Record<number, StageResult>
-  sessions: SessionRecord[]
+  records: LineRecord[]
 }
 
 export interface BestRecord {
   cpm: number
   accuracy: number
   at: number
-  stageId: number
+  source: string
+  text: string
 }
 
 const USERS_KEY = 'taza:users'
 const CURRENT_USER_KEY = 'taza:current-user'
-const userKey = (name: string) => `taza:user:${name}:progress-v2`
+const userKey = (name: string) => `taza:user:${name}:progress-v3`
 
-const MAX_SESSIONS = 500
+const MAX_RECORDS = 1000
 
 const readJson = <T,>(key: string): T | null => {
   try {
@@ -69,28 +63,27 @@ export const clearCurrentUser = (): void => {
 export const getProgress = (name: string): UserProgress => {
   const raw = readJson<Partial<UserProgress>>(userKey(name))
   return {
-    stageResults: raw?.stageResults ?? {},
-    sessions: raw?.sessions ?? [],
+    records: raw?.records ?? [],
   }
 }
 
-export const recordStageResult = (
+export const recordLine = (
   name: string,
-  stageId: number,
+  source: string,
   cpm: number,
-  accuracy: number
+  accuracy: number,
+  text: string
 ): void => {
   const progress = getProgress(name)
-  const prev = progress.stageResults[stageId]
-  progress.stageResults[stageId] = {
-    bestCpm: prev ? Math.max(prev.bestCpm, cpm) : cpm,
-    bestAccuracy: prev ? Math.max(prev.bestAccuracy, accuracy) : accuracy,
-    attempts: (prev?.attempts ?? 0) + 1,
-    lastAt: Date.now(),
-  }
-  progress.sessions.push({ at: Date.now(), stageId, cpm, accuracy })
-  if (progress.sessions.length > MAX_SESSIONS) {
-    progress.sessions = progress.sessions.slice(-MAX_SESSIONS)
+  progress.records.push({
+    at: Date.now(),
+    source,
+    cpm,
+    accuracy,
+    text: text.slice(0, 80),
+  })
+  if (progress.records.length > MAX_RECORDS) {
+    progress.records = progress.records.slice(-MAX_RECORDS)
   }
   writeJson(userKey(name), progress)
 }
@@ -101,31 +94,35 @@ const startOfToday = (): number => {
   return d.getTime()
 }
 
-const bestOf = (sessions: SessionRecord[]): BestRecord | null => {
-  if (sessions.length === 0) return null
-  let best = sessions[0]
-  for (const s of sessions) {
-    if (s.cpm > best.cpm) best = s
+const bestOf = (records: LineRecord[]): BestRecord | null => {
+  if (records.length === 0) return null
+  let best = records[0]
+  for (const r of records) {
+    if (r.cpm > best.cpm) best = r
   }
-  return { cpm: best.cpm, accuracy: best.accuracy, at: best.at, stageId: best.stageId }
+  return {
+    cpm: best.cpm,
+    accuracy: best.accuracy,
+    at: best.at,
+    source: best.source,
+    text: best.text,
+  }
 }
 
 export const getTodayBest = (name: string): BestRecord | null => {
   const today = startOfToday()
-  const sessions = getProgress(name).sessions.filter((s) => s.at >= today)
-  return bestOf(sessions)
+  return bestOf(getProgress(name).records.filter((r) => r.at >= today))
 }
 
 export const getAllTimeBest = (name: string): BestRecord | null =>
-  bestOf(getProgress(name).sessions)
+  bestOf(getProgress(name).records)
 
-export const getRecentSessions = (name: string, n = 8): SessionRecord[] => {
-  const sessions = getProgress(name).sessions
-  return sessions.slice(-n).reverse()
+export const getRecentRecords = (name: string, n = 8): LineRecord[] => {
+  const records = getProgress(name).records
+  return records.slice(-n).reverse()
 }
 
-export const getTodayStats = (name: string): { sessions: number; totalSeconds: number } => {
+export const getTodayCount = (name: string): number => {
   const today = startOfToday()
-  const todaySessions = getProgress(name).sessions.filter((s) => s.at >= today)
-  return { sessions: todaySessions.length, totalSeconds: 0 }
+  return getProgress(name).records.filter((r) => r.at >= today).length
 }

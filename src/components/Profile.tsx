@@ -1,17 +1,18 @@
+import { useState } from 'react'
 import {
   getAllTimeBest,
-  getRecentSessions,
+  getRecentRecords,
   getTodayBest,
-  getTodayStats,
+  getTodayCount,
   type BestRecord,
-  type SessionRecord,
+  type LineRecord,
 } from '../storage/progress'
-import { findStage } from '../lessons/data'
+import { SOURCES, sourceShortLabel } from '../lessons/sources'
 import './Profile.css'
 
 interface Props {
   userName: string
-  onStart: () => void
+  onStart: (source: string) => void
   onSwitchUser: () => void
 }
 
@@ -27,9 +28,6 @@ const formatRelative = (at: number): string => {
   const date = new Date(at)
   return `${date.getMonth() + 1}/${date.getDate()}`
 }
-
-const stageTitle = (id: number): string =>
-  findStage(id)?.title ?? `Stage ${id}`
 
 const StatCard = ({
   label,
@@ -49,7 +47,10 @@ const StatCard = ({
     <div className="sc-sub">
       {record ? (
         <>
-          정확도 {Math.round(record.accuracy * 100)}% · {stageTitle(record.stageId)}
+          정확도 {Math.round(record.accuracy * 100)}% ·{' '}
+          <span className="sc-text" title={record.text}>
+            “{record.text}”
+          </span>
         </>
       ) : (
         '기록 없음'
@@ -58,20 +59,23 @@ const StatCard = ({
   </div>
 )
 
-const RecentRow = ({ s }: { s: SessionRecord }) => (
+const RecentRow = ({ r }: { r: LineRecord }) => (
   <li className="recent-row">
-    <span className="rr-when">{formatRelative(s.at)}</span>
-    <span className="rr-stage">{stageTitle(s.stageId)}</span>
-    <span className="rr-cpm">{Math.round(s.cpm)} CPM</span>
-    <span className="rr-acc">{Math.round(s.accuracy * 100)}%</span>
+    <span className="rr-when">{formatRelative(r.at)}</span>
+    <span className="rr-text" title={r.text}>
+      {r.text}
+    </span>
+    <span className="rr-cpm">{Math.round(r.cpm)} CPM</span>
+    <span className="rr-acc">{Math.round(r.accuracy * 100)}%</span>
   </li>
 )
 
 export const Profile = ({ userName, onStart, onSwitchUser }: Props) => {
+  const [source, setSource] = useState<string>('random')
   const today = getTodayBest(userName)
   const allTime = getAllTimeBest(userName)
-  const recent = getRecentSessions(userName, 6)
-  const todayStats = getTodayStats(userName)
+  const recent = getRecentRecords(userName, 6)
+  const todayCount = getTodayCount(userName)
 
   return (
     <div className="profile">
@@ -79,7 +83,7 @@ export const Profile = ({ userName, onStart, onSwitchUser }: Props) => {
         <div className="avatar">{userName.slice(0, 1).toUpperCase()}</div>
         <div className="profile-name-row">
           <div className="profile-name">{userName}</div>
-          <div className="profile-meta">오늘 연습 {todayStats.sessions}회</div>
+          <div className="profile-meta">오늘 친 줄 {todayCount}개</div>
         </div>
         <button className="switch" onClick={onSwitchUser}>
           다른 사용자
@@ -91,22 +95,34 @@ export const Profile = ({ userName, onStart, onSwitchUser }: Props) => {
         <StatCard label="역대 최고 타수" record={allTime} variant="primary" />
       </div>
 
+      <div className="start-row">
+        <label className="source-select">
+          <span className="ss-label">연습 종류</span>
+          <select value={source} onChange={(e) => setSource(e.target.value)}>
+            {SOURCES.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button className="start-btn" onClick={() => onStart(source)}>
+          {sourceShortLabel(source)} 시작
+        </button>
+      </div>
+
       <section className="recent">
         <h3>최근 기록</h3>
         {recent.length === 0 ? (
-          <p className="empty">아직 연습 기록이 없습니다. 시작해 보세요.</p>
+          <p className="empty">아직 기록이 없습니다. 한 줄만 쳐도 자동 저장됩니다.</p>
         ) : (
           <ul>
-            {recent.map((s, i) => (
-              <RecentRow key={`${s.at}-${i}`} s={s} />
+            {recent.map((r) => (
+              <RecentRow key={r.at} r={r} />
             ))}
           </ul>
         )}
       </section>
-
-      <button className="start-btn" onClick={onStart}>
-        연습 시작
-      </button>
     </div>
   )
 }

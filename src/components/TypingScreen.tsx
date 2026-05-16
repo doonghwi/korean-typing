@@ -10,8 +10,14 @@ import './TypingScreen.css'
 interface Props {
   title?: string
   lines: string[]
-  onComplete?: (result: { cpm: number; accuracy: number; seconds: number }) => void
-  onNext?: () => void
+  onLineComplete?: (result: {
+    cpm: number
+    accuracy: number
+    seconds: number
+    text: string
+  }) => void
+  onFinishAll?: () => void
+  onExit?: () => void
 }
 
 interface LineResult {
@@ -21,20 +27,28 @@ interface LineResult {
   seconds: number
 }
 
-export const TypingScreen = ({ title, lines, onComplete, onNext }: Props) => {
+export const TypingScreen = ({
+  title,
+  lines,
+  onLineComplete,
+  onFinishAll,
+  onExit,
+}: Props) => {
   const [lineIdx, setLineIdx] = useState(0)
   const [lineResults, setLineResults] = useState<LineResult[]>([])
-  const [lessonDone, setLessonDone] = useState(false)
+  const [allDone, setAllDone] = useState(false)
   const [tick, setTick] = useState(0)
 
   const currentLine = lines[lineIdx] ?? ''
   const { state, derived, restart } = useTypingSession(currentLine)
   const justFinishedRef = useRef(false)
+  const onLineCompleteRef = useRef(onLineComplete)
+  onLineCompleteRef.current = onLineComplete
 
   useEffect(() => {
     setLineIdx(0)
     setLineResults([])
-    setLessonDone(false)
+    setAllDone(false)
     justFinishedRef.current = false
   }, [lines])
 
@@ -55,6 +69,14 @@ export const TypingScreen = ({ title, lines, onComplete, onNext }: Props) => {
         seconds: derived.elapsedSeconds,
       }
       setLineResults((prev) => [...prev, result])
+      if (onLineCompleteRef.current) {
+        onLineCompleteRef.current({
+          cpm: derived.charsPerMinute,
+          accuracy: derived.accuracy,
+          seconds: derived.elapsedSeconds,
+          text: currentLine,
+        })
+      }
     } else if (!state.finishedAt) {
       justFinishedRef.current = false
     }
@@ -62,20 +84,13 @@ export const TypingScreen = ({ title, lines, onComplete, onNext }: Props) => {
 
   useEffect(() => {
     if (lineResults.length >= lines.length && lines.length > 0) {
-      setLessonDone(true)
+      setAllDone(true)
     }
   }, [lineResults.length, lines.length])
 
   useEffect(() => {
-    if (lessonDone && onComplete && lineResults.length > 0) {
-      const avgCpm =
-        lineResults.reduce((s, r) => s + r.cpm, 0) / lineResults.length
-      const avgAcc =
-        lineResults.reduce((s, r) => s + r.accuracy, 0) / lineResults.length
-      const totalSec = lineResults.reduce((s, r) => s + r.seconds, 0)
-      onComplete({ cpm: avgCpm, accuracy: avgAcc, seconds: totalSec })
-    }
-  }, [lessonDone, lineResults, onComplete])
+    if (allDone && onFinishAll) onFinishAll()
+  }, [allDone, onFinishAll])
 
   useEffect(() => {
     if (!state.finishedAt) return
@@ -85,14 +100,12 @@ export const TypingScreen = ({ title, lines, onComplete, onNext }: Props) => {
         e.preventDefault()
         if (lineIdx < lines.length - 1) {
           setLineIdx((idx) => idx + 1)
-        } else if (onNext) {
-          onNext()
         }
       }
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [state.finishedAt, lineIdx, lines.length, onNext])
+  }, [state.finishedAt, lineIdx, lines.length])
 
   const liveDerived = state.finishedAt
     ? derived
@@ -129,13 +142,15 @@ export const TypingScreen = ({ title, lines, onComplete, onNext }: Props) => {
     )
   }
 
-  const restartLesson = () => {
+  const restartSession = () => {
     setLineIdx(0)
     setLineResults([])
-    setLessonDone(false)
+    setAllDone(false)
     justFinishedRef.current = false
     restart()
   }
+
+  const lastResult = lineResults[lineResults.length - 1]
 
   return (
     <div className="typing-screen">
@@ -169,20 +184,15 @@ export const TypingScreen = ({ title, lines, onComplete, onNext }: Props) => {
               <span className="placeholder">타이핑을 시작하세요…</span>
             )}
           </div>
-          {state.finishedAt ? (
+          {state.finishedAt && lastResult ? (
             <div className="line-finished">
-              ✓{' '}
+              ✓ {Math.round(lastResult.cpm)} CPM ·{' '}
+              {Math.round(lastResult.accuracy * 100)}%
               {isLastLine ? (
-                onNext ? (
-                  <>
-                    <kbd>Enter</kbd> 또는 <kbd>Space</kbd>로 다음 레슨
-                  </>
-                ) : (
-                  '레슨 완료'
-                )
+                ' — 마지막 줄'
               ) : (
                 <>
-                  <kbd>Enter</kbd> 또는 <kbd>Space</kbd>로 다음 줄
+                  {' '}— <kbd>Enter</kbd> 또는 <kbd>Space</kbd>로 다음 줄
                 </>
               )}
             </div>
@@ -204,10 +214,10 @@ export const TypingScreen = ({ title, lines, onComplete, onNext }: Props) => {
         <kbd>Space</kbd> 띄어쓰기 / 다음 줄
       </div>
 
-      {lessonDone ? (
+      {allDone ? (
         <div className="finished">
           <p>
-            레슨 완료! 평균 CPM{' '}
+            전체 완료! 평균 CPM{' '}
             {Math.round(
               lineResults.reduce((s, r) => s + r.cpm, 0) /
                 Math.max(1, lineResults.length)
@@ -221,10 +231,10 @@ export const TypingScreen = ({ title, lines, onComplete, onNext }: Props) => {
             %
           </p>
           <div className="actions">
-            <button onClick={restartLesson}>전체 다시</button>
-            {onNext ? (
-              <button className="primary" onClick={onNext}>
-                다음 레슨 (Enter)
+            <button onClick={restartSession}>다시 (새 순서)</button>
+            {onExit ? (
+              <button className="primary" onClick={onExit}>
+                프로필로
               </button>
             ) : null}
           </div>

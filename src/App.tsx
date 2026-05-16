@@ -1,13 +1,16 @@
 import { useCallback, useMemo, useState } from 'react'
 import { TypingScreen } from './components/TypingScreen'
-import { LessonList } from './components/LessonList'
 import { UserPicker } from './components/UserPicker'
 import { Profile } from './components/Profile'
-import { findStage, nextStageId, stageLines } from './lessons/data'
+import {
+  SOURCES,
+  linesForSource,
+  sourceLabel,
+} from './lessons/sources'
 import {
   clearCurrentUser,
   getCurrentUser,
-  recordStageResult,
+  recordLine,
 } from './storage/progress'
 import { shuffle } from './utils/shuffle'
 import './App.css'
@@ -15,8 +18,7 @@ import './App.css'
 type View =
   | { kind: 'pick-user' }
   | { kind: 'profile' }
-  | { kind: 'list' }
-  | { kind: 'stage'; id: number; sessionKey: number }
+  | { kind: 'session'; source: string; sessionKey: number }
 
 function App() {
   const [user, setUser] = useState<string | null>(() => getCurrentUser())
@@ -35,38 +37,27 @@ function App() {
     setView({ kind: 'pick-user' })
   }, [])
 
-  const goToList = useCallback(() => setView({ kind: 'list' }), [])
   const goToProfile = useCallback(() => setView({ kind: 'profile' }), [])
 
-  const openStage = useCallback((stageId: number) => {
-    setView({ kind: 'stage', id: stageId, sessionKey: Date.now() })
+  const startSession = useCallback((source: string) => {
+    setView({ kind: 'session', source, sessionKey: Date.now() })
   }, [])
 
-  const goNextStage = useCallback(() => {
-    if (view.kind !== 'stage') return
-    const nxt = nextStageId(view.id)
-    if (nxt !== null) {
-      setView({ kind: 'stage', id: nxt, sessionKey: Date.now() })
-    } else {
-      setView({ kind: 'list' })
-    }
-  }, [view])
-
-  const onComplete = useCallback(
-    (r: { cpm: number; accuracy: number; seconds: number }) => {
-      if (user && view.kind === 'stage') {
-        recordStageResult(user, view.id, r.cpm, r.accuracy)
+  const onLineComplete = useCallback(
+    (r: { cpm: number; accuracy: number; seconds: number; text: string }) => {
+      if (user && view.kind === 'session') {
+        recordLine(user, view.source, r.cpm, r.accuracy, r.text)
       }
     },
     [user, view]
   )
 
-  const stage = view.kind === 'stage' ? findStage(view.id) : null
-  const sessionKey = view.kind === 'stage' ? view.sessionKey : null
+  const sessionSource = view.kind === 'session' ? view.source : null
+  const sessionKey = view.kind === 'session' ? view.sessionKey : null
   const shuffledLines = useMemo(() => {
-    if (!stage) return []
-    return shuffle(stageLines(stage))
-  }, [sessionKey, stage])
+    if (!sessionSource) return []
+    return shuffle(linesForSource(sessionSource))
+  }, [sessionKey, sessionSource])
 
   return (
     <main className="app">
@@ -78,29 +69,20 @@ function App() {
       {view.kind === 'pick-user' ? (
         <UserPicker onPick={pickUser} />
       ) : view.kind === 'profile' && user ? (
-        <Profile userName={user} onStart={goToList} onSwitchUser={switchUser} />
-      ) : view.kind === 'list' && user ? (
+        <Profile userName={user} onStart={startSession} onSwitchUser={switchUser} />
+      ) : view.kind === 'session' && sessionSource && SOURCES.some((s) => s.value === sessionSource) ? (
         <>
           <div className="back-row">
             <button className="back-btn" onClick={goToProfile}>
               ← 프로필
             </button>
           </div>
-          <LessonList userName={user} onPick={openStage} onSwitchUser={switchUser} />
-        </>
-      ) : view.kind === 'stage' && stage ? (
-        <>
-          <div className="back-row">
-            <button className="back-btn" onClick={goToList}>
-              ← 단계 목록
-            </button>
-          </div>
           <TypingScreen
             key={view.sessionKey}
-            title={stage.title}
+            title={sourceLabel(sessionSource)}
             lines={shuffledLines}
-            onComplete={onComplete}
-            onNext={nextStageId(stage.id) !== null ? goNextStage : undefined}
+            onLineComplete={onLineComplete}
+            onExit={goToProfile}
           />
         </>
       ) : null}
