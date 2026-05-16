@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# OMC (Claude Code session state — local only)
+.omc
+.claude
