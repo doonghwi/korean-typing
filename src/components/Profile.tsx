@@ -8,6 +8,7 @@ import {
   type LineRecord,
 } from '../storage/progress'
 import { SOURCES, sourceShortLabel } from '../lessons/sources'
+import { Leaderboard } from './Leaderboard'
 import './Profile.css'
 
 interface Props {
@@ -111,8 +112,10 @@ export const Profile = ({ userName, onStart, onSwitchUser }: Props) => {
         </button>
       </div>
 
+      <Leaderboard userName={userName} />
+
       <section className="recent">
-        <h3>최근 기록</h3>
+        <h3>내 최근 기록</h3>
         {recent.length === 0 ? (
           <p className="empty">아직 기록이 없습니다. 한 줄만 쳐도 자동 저장됩니다.</p>
         ) : (

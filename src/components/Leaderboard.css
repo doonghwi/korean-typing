@@ -1,0 +1,140 @@
+.leaderboard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.lb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lb-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.lb-tabs {
+  display: flex;
+  gap: 0.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  padding: 0.15rem;
+}
+
+.lb-tabs button {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  padding: 0.2rem 0.6rem;
+  border-radius: 0.3rem;
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.lb-tabs button.active {
+  background: var(--accent);
+  color: white;
+}
+
+.lb-empty {
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.lb-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.lb-row {
+  display: grid;
+  grid-template-columns: 1.6rem 5rem 1fr auto auto;
+  gap: 0.6rem;
+  align-items: baseline;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.lb-row:last-child {
+  border-bottom: none;
+}
+
+.lb-row.me {
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+}
+
+.lb-row .lb-rank {
+  color: var(--muted);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.lb-row:nth-child(1) .lb-rank {
+  color: #ffd34a;
+}
+
+.lb-row:nth-child(2) .lb-rank {
+  color: #cbd5e1;
+}
+
+.lb-row:nth-child(3) .lb-rank {
+  color: #d4a374;
+}
+
+.lb-row .lb-user {
+  color: var(--text);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lb-row .lb-text {
+  color: var(--muted);
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lb-row .lb-cpm {
+  color: var(--correct);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.lb-row .lb-acc {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 520px) {
+  .lb-row {
+    grid-template-columns: 1.4rem 4rem 1fr auto;
+  }
+  .lb-row .lb-acc {
+    display: none;
+  }
+}

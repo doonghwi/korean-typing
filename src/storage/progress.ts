@@ -1,3 +1,5 @@
+import { pushRecord } from './cloudRanking'
+
 export interface LineRecord {
   at: number
   source: string
@@ -89,6 +91,14 @@ export const recordLine = (
     progress.records = progress.records.slice(-MAX_RECORDS)
   }
   writeJson(userKey(name), progress)
+
+  void pushRecord({
+    user: name,
+    source,
+    cpm,
+    accuracy,
+    text: text.slice(0, 80),
+  })
 }
 
 const startOfToday = (): number => {
