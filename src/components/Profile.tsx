@@ -7,7 +7,12 @@ import {
   type BestRecord,
   type LineRecord,
 } from '../storage/progress'
-import { SOURCES, sourceShortLabel } from '../lessons/sources'
+import {
+  LONG_OPTIONS,
+  POSITION_OPTIONS,
+  SHORT_OPTIONS,
+  WORD_OPTIONS,
+} from '../lessons/sources'
 import { Leaderboard } from './Leaderboard'
 import './Profile.css'
 
@@ -71,8 +76,52 @@ const RecentRow = ({ r }: { r: LineRecord }) => (
   </li>
 )
 
+interface SectionProps {
+  title: string
+  subtitle: string
+  value: string
+  onChange: (v: string) => void
+  onStart: () => void
+  children: React.ReactNode
+}
+
+const PracticeSection = ({
+  title,
+  subtitle,
+  value,
+  onChange,
+  onStart,
+  children,
+}: SectionProps) => (
+  <section className="practice-section">
+    <div className="ps-header">
+      <h3>{title}</h3>
+      <span className="ps-sub">{subtitle}</span>
+    </div>
+    <div className="start-row">
+      <label className="source-select">
+        <select value={value} onChange={(e) => onChange(e.target.value)}>
+          {children}
+        </select>
+      </label>
+      <button className="start-btn" onClick={onStart}>
+        시작
+      </button>
+    </div>
+  </section>
+)
+
 export const Profile = ({ userName, onStart, onSwitchUser }: Props) => {
-  const [source, setSource] = useState<string>(SOURCES[0]?.value ?? 'stage-1')
+  const [positionSrc, setPositionSrc] = useState<string>(
+    POSITION_OPTIONS[0]?.value ?? ''
+  )
+  const [wordsSrc, setWordsSrc] = useState<string>(
+    WORD_OPTIONS[WORD_OPTIONS.length - 1]?.value ?? ''
+  )
+  const [sentenceSrc, setSentenceSrc] = useState<string>(
+    SHORT_OPTIONS[0]?.value ?? ''
+  )
+
   const today = getTodayBest(userName)
   const allTime = getAllTimeBest(userName)
   const recent = getRecentRecords(userName, 6)
@@ -96,20 +145,57 @@ export const Profile = ({ userName, onStart, onSwitchUser }: Props) => {
         <StatCard label="역대 최고 타수" record={allTime} variant="primary" />
       </div>
 
-      <div className="start-row">
-        <label className="source-select">
-          <span className="ss-label">연습 종류</span>
-          <select value={source} onChange={(e) => setSource(e.target.value)}>
-            {SOURCES.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
+      <div className="practice-sections">
+        <PracticeSection
+          title="자리연습"
+          subtitle="단계별 자판 위치 익히기"
+          value={positionSrc}
+          onChange={setPositionSrc}
+          onStart={() => onStart(positionSrc)}
+        >
+          {POSITION_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </PracticeSection>
+
+        <PracticeSection
+          title="단어연습"
+          subtitle="배운 자판까지의 단어로 연습"
+          value={wordsSrc}
+          onChange={setWordsSrc}
+          onStart={() => onStart(wordsSrc)}
+        >
+          {WORD_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </PracticeSection>
+
+        <PracticeSection
+          title="문장연습"
+          subtitle="짧은 문장과 긴 글. 랭킹에 등록됩니다."
+          value={sentenceSrc}
+          onChange={setSentenceSrc}
+          onStart={() => onStart(sentenceSrc)}
+        >
+          <optgroup label="짧은 문장">
+            {SHORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
               </option>
             ))}
-          </select>
-        </label>
-        <button className="start-btn" onClick={() => onStart(source)}>
-          {sourceShortLabel(source)} 시작
-        </button>
+          </optgroup>
+          <optgroup label="긴 글">
+            {LONG_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </optgroup>
+        </PracticeSection>
       </div>
 
       <Leaderboard userName={userName} />

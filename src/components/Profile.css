@@ -118,6 +118,42 @@
   opacity: 0.7;
 }
 
+.practice-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.practice-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.9rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.practice-section .ps-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.practice-section h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.practice-section .ps-sub {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-align: right;
+}
+
 .start-row {
   display: flex;
   gap: 0.75rem;

@@ -1,14 +1,18 @@
-export interface Lesson {
+export interface PositionLesson {
   id: string
-  stageId: number
   title: string
   lines: string[]
 }
 
-export interface Stage {
+export interface PositionStage {
   id: number
   title: string
   description: string
-  lessons: Lesson[]
-  eligibleForRanking?: boolean
+  lessons: PositionLesson[]
+}
+
+export interface SentenceLesson {
+  id: string
+  title: string
+  lines: string[]
 }

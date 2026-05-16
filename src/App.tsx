@@ -3,7 +3,7 @@ import { TypingScreen } from './components/TypingScreen'
 import { UserPicker } from './components/UserPicker'
 import { Profile } from './components/Profile'
 import {
-  SOURCES,
+  isValidSource,
   linesForSource,
   sourceLabel,
 } from './lessons/sources'
@@ -70,7 +70,7 @@ function App() {
         <UserPicker onPick={pickUser} />
       ) : view.kind === 'profile' && user ? (
         <Profile userName={user} onStart={startSession} onSwitchUser={switchUser} />
-      ) : view.kind === 'session' && sessionSource && SOURCES.some((s) => s.value === sessionSource) ? (
+      ) : view.kind === 'session' && sessionSource && isValidSource(sessionSource) ? (
         <>
           <div className="back-row">
             <button className="back-btn" onClick={goToProfile}>

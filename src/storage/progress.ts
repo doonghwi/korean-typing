@@ -1,4 +1,4 @@
-import { isSourceRankingEligible } from '../lessons/data'
+import { isSourceRankingEligible } from '../lessons/sources'
 import { pushRecord } from './cloudRanking'
 
 export interface LineRecord {
@@ -77,7 +77,6 @@ export const recordLine = (
   accuracy: number,
   text: string
 ): void => {
-  if (!isSourceRankingEligible(source)) return
   const progress = getProgress(name)
   progress.records.push({
     at: Date.now(),
@@ -91,6 +90,7 @@ export const recordLine = (
   }
   writeJson(userKey(name), progress)
 
+  if (!isSourceRankingEligible(source)) return
   void pushRecord({
     user: name,
     source,
