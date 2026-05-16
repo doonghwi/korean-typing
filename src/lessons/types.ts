@@ -10,4 +10,5 @@ export interface Stage {
   title: string
   description: string
   lessons: Lesson[]
+  eligibleForRanking?: boolean
 }
