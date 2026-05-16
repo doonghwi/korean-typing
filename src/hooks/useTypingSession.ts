@@ -135,12 +135,19 @@ export const useTypingSession = (target: string) => {
       }
 
       const keyChar = codeToKeyChar(e.code, e.shiftKey)
-      if (!keyChar) return
-      const jamo = keyToJamo(keyChar)
-      if (!jamo) return
+      if (keyChar) {
+        const jamo = keyToJamo(keyChar)
+        if (jamo) {
+          e.preventDefault()
+          dispatch({ type: 'jamo', jamo })
+          return
+        }
+      }
 
-      e.preventDefault()
-      dispatch({ type: 'jamo', jamo })
+      if (e.key.length === 1) {
+        e.preventDefault()
+        dispatch({ type: 'literal', ch: e.key })
+      }
     }
 
     document.addEventListener('keydown', onKeyDown)
