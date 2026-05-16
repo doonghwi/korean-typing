@@ -5,8 +5,6 @@ import {
   MAX_WORD_LEVEL,
   positionStageLines,
   wordsAtLevel,
-  findShortSentenceLesson,
-  findLongPassageLesson,
   findPositionStage,
 } from './data'
 
@@ -14,12 +12,16 @@ export type SectionKind = 'position' | 'words' | 'sentences'
 
 const POSITION_RE = /^position-(\d+)$/
 const WORDS_RE = /^words-(\d+|all)$/
-const SHORT_RE = /^sentence-(short-\d+)$/
-const LONG_RE = /^sentence-(long-\d+)$/
+const SENTENCES_SHORT = 'sentences-short'
+const SENTENCES_LONG = 'sentences-long'
 
 export const positionSource = (stageId: number): string => `position-${stageId}`
 export const wordsSource = (level: number | 'all'): string => `words-${level}`
-export const sentenceSource = (lessonId: string): string => `sentence-${lessonId}`
+export const sentencesShortSource = (): string => SENTENCES_SHORT
+export const sentencesLongSource = (): string => SENTENCES_LONG
+
+const shortLines = (): string[] => SHORT_SENTENCES.flatMap((l) => l.lines)
+const longLines = (): string[] => LONG_PASSAGES.flatMap((l) => l.lines)
 
 export const linesForSource = (source: string): string[] => {
   const pos = source.match(POSITION_RE)
@@ -31,17 +33,8 @@ export const linesForSource = (source: string): string[] => {
     return wordsAtLevel(level)
   }
 
-  const short = source.match(SHORT_RE)
-  if (short) {
-    const l = findShortSentenceLesson(short[1])
-    return l ? l.lines : []
-  }
-
-  const long = source.match(LONG_RE)
-  if (long) {
-    const l = findLongPassageLesson(long[1])
-    return l ? l.lines : []
-  }
+  if (source === SENTENCES_SHORT) return shortLines()
+  if (source === SENTENCES_LONG) return longLines()
 
   return []
 }
@@ -59,17 +52,8 @@ export const sourceLabel = (source: string): string => {
     return `단어연습 — ${words[1]}단계까지`
   }
 
-  const short = source.match(SHORT_RE)
-  if (short) {
-    const l = findShortSentenceLesson(short[1])
-    return l ? `짧은 문장 — ${l.title}` : source
-  }
-
-  const long = source.match(LONG_RE)
-  if (long) {
-    const l = findLongPassageLesson(long[1])
-    return l ? `긴 글 — ${l.title}` : source
-  }
+  if (source === SENTENCES_SHORT) return '문장연습 — 짧은 문장'
+  if (source === SENTENCES_LONG) return '문장연습 — 긴 글'
 
   return source
 }
@@ -80,12 +64,12 @@ export const isValidSource = (source: string): boolean =>
 export const sectionOfSource = (source: string): SectionKind | null => {
   if (POSITION_RE.test(source)) return 'position'
   if (WORDS_RE.test(source)) return 'words'
-  if (SHORT_RE.test(source) || LONG_RE.test(source)) return 'sentences'
+  if (source === SENTENCES_SHORT || source === SENTENCES_LONG) return 'sentences'
   return null
 }
 
 export const isSourceRankingEligible = (source: string): boolean =>
-  SHORT_RE.test(source) || LONG_RE.test(source)
+  source === SENTENCES_SHORT || source === SENTENCES_LONG
 
 export const POSITION_OPTIONS = POSITION_STAGES.map((s) => ({
   value: positionSource(s.id),
@@ -100,12 +84,7 @@ export const WORD_OPTIONS: { value: string; label: string }[] = [
   { value: wordsSource('all'), label: '전체' },
 ]
 
-export const SHORT_OPTIONS = SHORT_SENTENCES.map((l) => ({
-  value: sentenceSource(l.id),
-  label: l.title,
-}))
-
-export const LONG_OPTIONS = LONG_PASSAGES.map((l) => ({
-  value: sentenceSource(l.id),
-  label: l.title,
-}))
+export const SENTENCE_OPTIONS: { value: string; label: string }[] = [
+  { value: SENTENCES_SHORT, label: '짧은 문장' },
+  { value: SENTENCES_LONG, label: '긴 글' },
+]

@@ -8,9 +8,8 @@ import {
   type LineRecord,
 } from '../storage/progress'
 import {
-  LONG_OPTIONS,
   POSITION_OPTIONS,
-  SHORT_OPTIONS,
+  SENTENCE_OPTIONS,
   WORD_OPTIONS,
 } from '../lessons/sources'
 import { Leaderboard } from './Leaderboard'
@@ -119,7 +118,7 @@ export const Profile = ({ userName, onStart, onSwitchUser }: Props) => {
     WORD_OPTIONS[WORD_OPTIONS.length - 1]?.value ?? ''
   )
   const [sentenceSrc, setSentenceSrc] = useState<string>(
-    SHORT_OPTIONS[0]?.value ?? ''
+    SENTENCE_OPTIONS[0]?.value ?? ''
   )
 
   const today = getTodayBest(userName)
@@ -176,25 +175,16 @@ export const Profile = ({ userName, onStart, onSwitchUser }: Props) => {
 
         <PracticeSection
           title="문장연습"
-          subtitle="짧은 문장과 긴 글. 랭킹에 등록됩니다."
+          subtitle="전체 셔플로 진행. 랭킹에 등록됩니다."
           value={sentenceSrc}
           onChange={setSentenceSrc}
           onStart={() => onStart(sentenceSrc)}
         >
-          <optgroup label="짧은 문장">
-            {SHORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="긴 글">
-            {LONG_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </optgroup>
+          {SENTENCE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
         </PracticeSection>
       </div>
 
