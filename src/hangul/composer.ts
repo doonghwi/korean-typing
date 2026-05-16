@@ -1,9 +1,10 @@
 import {
+  CHO, JUNG, JONG,
   CHO_INDEX, JUNG_INDEX, JONG_INDEX,
   SYLLABLE_BASE,
   VOWEL_COMBINE, JONG_COMBINE,
   VOWEL_SPLIT, JONG_SPLIT,
-  isVowel, isFinalConsonant,
+  isHangulSyllable, isVowel, isFinalConsonant,
 } from './constants'
 
 export interface Syllable {
@@ -143,5 +144,22 @@ export const backspace = (state: ComposerState): ComposerState => {
     return { ...state, working: {} }
   }
   if (committed.length === 0) return state
+
+  const lastChar = committed[committed.length - 1]
+  if (isHangulSyllable(lastChar)) {
+    const offset = lastChar.codePointAt(0)! - SYLLABLE_BASE
+    const choIdx = Math.floor(offset / 588)
+    const jungIdx = Math.floor((offset % 588) / 28)
+    const jongIdx = offset % 28
+    const decomposed: Syllable = {
+      L: CHO[choIdx],
+      V: JUNG[jungIdx],
+    }
+    if (jongIdx > 0) decomposed.T = JONG[jongIdx]
+    return backspace({
+      committed: committed.slice(0, -1),
+      working: decomposed,
+    })
+  }
   return { committed: committed.slice(0, -1), working: {} }
 }
