@@ -25,3 +25,11 @@ export const keyToJamo = (key: string): string | null => DUBEOLSIK[key] ?? null
 export const jamoToKey = (jamo: string): string | null => JAMO_TO_KEY[jamo] ?? null
 
 export const requiresShift = (key: string): boolean => key >= 'A' && key <= 'Z'
+
+export const codeToKeyChar = (code: string, shift: boolean): string | null => {
+  if (code.startsWith('Key') && code.length === 4) {
+    const letter = code.slice(3)
+    return shift ? letter : letter.toLowerCase()
+  }
+  return null
+}

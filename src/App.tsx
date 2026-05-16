@@ -1,15 +1,16 @@
+import { TypingScreen } from './components/TypingScreen'
 import './App.css'
+
+const DEMO_TARGET = '안녕하세요'
 
 function App() {
   return (
     <main className="app">
       <header className="hero">
         <h1>한글 타자 연습</h1>
-        <p className="tagline">두벌식 키보드 · 손가락 위치 가이드 · iPad 지원</p>
+        <p className="tagline">두벌식 · 손가락 가이드 · iPad 지원</p>
       </header>
-      <section className="status">
-        <p>프로젝트 셋업 완료. 곧 레슨이 추가됩니다.</p>
-      </section>
+      <TypingScreen title="첫 인사" target={DEMO_TARGET} />
     </main>
   )
 }

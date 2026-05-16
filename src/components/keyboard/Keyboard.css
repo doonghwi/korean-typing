@@ -1,0 +1,95 @@
+.keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  user-select: none;
+  align-items: center;
+}
+
+.kb-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.kb-row[data-row='1'] {
+  margin-left: 1.2rem;
+}
+
+.kb-row[data-row='2'] {
+  margin-left: 2.4rem;
+}
+
+.key {
+  position: relative;
+  width: 3rem;
+  height: 3.4rem;
+  border-radius: 0.5rem;
+  background: var(--key);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  transition: background 120ms, color 120ms, transform 80ms;
+}
+
+.key.next {
+  background: var(--key-active);
+  color: white;
+  border-color: var(--key-active);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--key-active) 30%, transparent);
+  transform: translateY(-2px);
+}
+
+.key .ascii {
+  font-size: 0.7rem;
+  opacity: 0.6;
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+.key .jamo {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.key.next .jamo,
+.key.next .ascii,
+.key.next .jamo-shift {
+  color: white;
+}
+
+.key .jamo-shift {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.3rem;
+  font-size: 0.7rem;
+  opacity: 0.5;
+}
+
+.key .shift-badge {
+  position: absolute;
+  top: -0.4rem;
+  right: -0.4rem;
+  background: var(--accent);
+  color: white;
+  font-size: 0.6rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.5rem;
+}
+
+@media (max-width: 720px) {
+  .key {
+    width: 2.4rem;
+    height: 2.8rem;
+  }
+  .kb-row[data-row='1'] {
+    margin-left: 0.8rem;
+  }
+  .kb-row[data-row='2'] {
+    margin-left: 1.6rem;
+  }
+}

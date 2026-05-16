@@ -1,0 +1,145 @@
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import {
+  type ComposerState,
+  backspace,
+  decomposeText,
+  initialState,
+  inputJamo,
+  keyToJamo,
+  renderState,
+} from '../hangul'
+import { codeToKeyChar } from '../hangul/dubeolsik'
+
+export interface SessionState {
+  composer: ComposerState
+  target: string
+  targetJamo: string[]
+  inputCount: number
+  errorCount: number
+  startedAt: number | null
+  finishedAt: number | null
+}
+
+type Action =
+  | { type: 'jamo'; jamo: string }
+  | { type: 'backspace' }
+  | { type: 'restart'; target: string }
+
+const init = (target: string): SessionState => ({
+  composer: initialState(),
+  target,
+  targetJamo: decomposeText(target),
+  inputCount: 0,
+  errorCount: 0,
+  startedAt: null,
+  finishedAt: null,
+})
+
+const reducer = (state: SessionState, action: Action): SessionState => {
+  if (action.type === 'restart') return init(action.target)
+  if (state.finishedAt) return state
+
+  if (action.type === 'backspace') {
+    return { ...state, composer: backspace(state.composer) }
+  }
+
+  const expected = state.targetJamo[state.inputCount]
+  const isCorrect = expected === action.jamo
+  const nextComposer = inputJamo(state.composer, action.jamo)
+  const nextInputCount = state.inputCount + 1
+  const nextErrors = state.errorCount + (isCorrect ? 0 : 1)
+  const startedAt = state.startedAt ?? Date.now()
+  const rendered = renderState(nextComposer)
+  const finishedAt = rendered === state.target ? Date.now() : null
+
+  return {
+    ...state,
+    composer: nextComposer,
+    inputCount: nextInputCount,
+    errorCount: nextErrors,
+    startedAt,
+    finishedAt,
+  }
+}
+
+export interface SessionDerived {
+  rendered: string
+  cursorChar: number
+  expectedJamo: string | null
+  elapsedSeconds: number
+  accuracy: number
+  charsPerMinute: number
+  wordsPerMinute: number
+}
+
+export const deriveSession = (s: SessionState, now: number): SessionDerived => {
+  const rendered = renderState(s.composer)
+  const cursorChar = s.composer.committed.length
+  const expectedJamo = s.targetJamo[s.inputCount] ?? null
+
+  const end = s.finishedAt ?? now
+  const elapsed = s.startedAt ? Math.max(0, (end - s.startedAt) / 1000) : 0
+
+  const accuracy = s.inputCount === 0 ? 1 : Math.max(0, 1 - s.errorCount / s.inputCount)
+  const correctChars = Math.max(0, s.inputCount - s.errorCount)
+  const minutes = elapsed / 60
+  const charsPerMinute = minutes > 0 ? correctChars / minutes : 0
+  const wordsPerMinute = charsPerMinute / 5
+
+  return {
+    rendered,
+    cursorChar,
+    expectedJamo,
+    elapsedSeconds: elapsed,
+    accuracy,
+    charsPerMinute,
+    wordsPerMinute,
+  }
+}
+
+export const useTypingSession = (target: string) => {
+  const [state, dispatch] = useReducer(reducer, target, init)
+  const stateRef = useRef(state)
+  stateRef.current = state
+
+  useEffect(() => {
+    dispatch({ type: 'restart', target })
+  }, [target])
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+
+      if (e.key === 'Backspace') {
+        e.preventDefault()
+        dispatch({ type: 'backspace' })
+        return
+      }
+
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        dispatch({ type: 'restart', target: stateRef.current.target })
+        return
+      }
+
+      const keyChar = codeToKeyChar(e.code, e.shiftKey)
+      if (!keyChar) return
+      const jamo = keyToJamo(keyChar)
+      if (!jamo) return
+
+      e.preventDefault()
+      dispatch({ type: 'jamo', jamo })
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [])
+
+  const restart = useCallback(() => {
+    dispatch({ type: 'restart', target: stateRef.current.target })
+  }, [])
+
+  const derived = useMemo(() => deriveSession(state, Date.now()), [state])
+
+  return { state, derived, restart }
+}
