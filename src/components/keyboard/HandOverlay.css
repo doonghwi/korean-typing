@@ -8,20 +8,27 @@
   overflow: visible;
 }
 
-.hand-overlay .palm,
-.hand-overlay .thumb {
-  fill: var(--accent);
-  opacity: 0.12;
+.hand-overlay .hand {
+  transition: transform 340ms cubic-bezier(0.25, 0.8, 0.3, 1);
 }
 
-.hand-overlay .finger {
-  fill: var(--accent);
-  opacity: 0.22;
-  transition: opacity 160ms ease, filter 160ms ease;
+.hand-overlay .palm,
+.hand-overlay .finger,
+.hand-overlay .thumb {
+  fill: var(--muted);
+  fill-opacity: 0.16;
+  stroke: var(--muted);
+  stroke-opacity: 0.32;
+  stroke-width: 0.35;
+  transition: fill 220ms ease, fill-opacity 220ms ease, stroke 220ms ease,
+    stroke-opacity 220ms ease, filter 220ms ease;
 }
 
 .hand-overlay .finger.active,
 .hand-overlay .thumb.active {
-  opacity: 0.7;
-  filter: drop-shadow(0 0 6px color-mix(in oklab, var(--accent) 60%, transparent));
+  fill: var(--accent);
+  fill-opacity: 0.7;
+  stroke: var(--accent);
+  stroke-opacity: 0.95;
+  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--accent) 55%, transparent));
 }

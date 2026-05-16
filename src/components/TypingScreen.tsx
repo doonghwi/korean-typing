@@ -206,7 +206,7 @@ export const TypingScreen = ({
 
       <div className="keyboard-wrapper">
         <Keyboard nextKeyChar={nextKeyChar} />
-        <HandOverlay activeFinger={activeFinger} />
+        <HandOverlay activeFinger={activeFinger} nextKeyChar={nextKeyChar} />
       </div>
 
       <div className="hint">
