@@ -1,0 +1,50 @@
+:root {
+  --bg: #0f1115;
+  --surface: #1a1d24;
+  --border: #2a2e38;
+  --text: #e8eaed;
+  --muted: #9aa0a8;
+  --accent: #4f8cff;
+  --correct: #4ade80;
+  --wrong: #f87171;
+  --key: #2a2e38;
+  --key-active: #4f8cff;
+
+  font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo',
+    'Malgun Gothic', system-ui, sans-serif;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #ffffff;
+    --surface: #f5f6f8;
+    --border: #e3e5ea;
+    --text: #1a1d24;
+    --muted: #5e6470;
+    --key: #f0f1f4;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
