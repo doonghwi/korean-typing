@@ -67,6 +67,8 @@ export const getProgress = (name: string): UserProgress => {
   }
 }
 
+const MIN_RECORD_LENGTH = 5
+
 export const recordLine = (
   name: string,
   source: string,
@@ -74,6 +76,7 @@ export const recordLine = (
   accuracy: number,
   text: string
 ): void => {
+  if (text.length < MIN_RECORD_LENGTH) return
   const progress = getProgress(name)
   progress.records.push({
     at: Date.now(),

@@ -27,6 +27,8 @@ interface LineResult {
   seconds: number
 }
 
+type CharStatus = 'pending' | 'current' | 'correct' | 'wrong'
+
 export const TypingScreen = ({
   title,
   lines,
@@ -125,18 +127,36 @@ export const TypingScreen = ({
 
   void tick
 
+  const isLastLine = lineIdx === lines.length - 1
   const prevLine = lineIdx > 0 ? lines[lineIdx - 1] : null
   const nextLine = lineIdx < lines.length - 1 ? lines[lineIdx + 1] : null
-  const isLastLine = lineIdx === lines.length - 1
+
+  const charStatus = (charIdx: number): CharStatus => {
+    const start = charIdx === 0 ? 0 : derived.boundaries[charIdx - 1]
+    const end = derived.boundaries[charIdx]
+    if (state.inputCount < start) return 'pending'
+    if (state.inputCount < end) return 'current'
+    for (let j = start; j < end; j++) {
+      if (state.inputs[j] !== state.targetJamo[j]) return 'wrong'
+    }
+    return 'correct'
+  }
 
   const renderTargetChar = (ch: string, i: number) => {
-    const isDone = i < derived.cursorChar
-    const isCurrentChar = i === derived.cursorChar
+    const status = charStatus(i)
+    const cls = `tch ${status}${ch === ' ' ? ' space' : ''}`
     return (
-      <span
-        key={i}
-        className={`tch${isDone ? ' done' : ''}${isCurrentChar ? ' current-char' : ''}${ch === ' ' ? ' space' : ''}`}
-      >
+      <span key={i} className={cls}>
+        {ch === ' ' ? '·' : ch}
+      </span>
+    )
+  }
+
+  const renderInputChar = (ch: string, i: number) => {
+    const targetCh = currentLine[i]
+    const wrong = targetCh !== undefined && ch !== targetCh
+    return (
+      <span key={i} className={`tch ${wrong ? 'wrong' : 'correct'}${ch === ' ' ? ' space' : ''}`}>
         {ch === ' ' ? '·' : ch}
       </span>
     )
@@ -151,6 +171,7 @@ export const TypingScreen = ({
   }
 
   const lastResult = lineResults[lineResults.length - 1]
+  const renderedChars = Array.from(derived.rendered)
 
   return (
     <div className="typing-screen">
@@ -170,19 +191,25 @@ export const TypingScreen = ({
         errors={state.errorCount}
       />
 
-      <div className="lines-stack">
-        <div className="line prev">
-          {prevLine !== null ? prevLine.replace(/ /g, '·') : <span className="empty">—</span>}
-        </div>
+      <div className="pair-stack">
+        {prevLine !== null ? (
+          <div className="pair prev">
+            <span className="check">✓</span>
+            <div className="pair-target">{prevLine.replace(/ /g, '·')}</div>
+          </div>
+        ) : null}
 
-        <div className="line current">
-          <div className="target-text" aria-label="목표 문장">
+        <div className="pair current">
+          <div className="pair-target" aria-label="목표 문장">
             {Array.from(currentLine).map(renderTargetChar)}
           </div>
-          <div className="rendered" aria-label="입력한 문장">
-            {derived.rendered || (
+          <div className="pair-input" aria-label="입력 중">
+            {renderedChars.length > 0 ? (
+              renderedChars.map(renderInputChar)
+            ) : (
               <span className="placeholder">타이핑을 시작하세요…</span>
             )}
+            <span className="caret" />
           </div>
           {state.finishedAt && lastResult ? (
             <div className="line-finished">
@@ -199,9 +226,12 @@ export const TypingScreen = ({
           ) : null}
         </div>
 
-        <div className="line next">
-          {nextLine !== null ? nextLine.replace(/ /g, '·') : <span className="empty">—</span>}
-        </div>
+        {nextLine !== null ? (
+          <div className="pair next">
+            <span className="check pending">·</span>
+            <div className="pair-target">{nextLine.replace(/ /g, '·')}</div>
+          </div>
+        ) : null}
       </div>
 
       <div className="keyboard-wrapper">

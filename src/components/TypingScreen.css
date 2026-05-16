@@ -27,113 +27,164 @@
   border-radius: 0.4rem;
 }
 
-.lines-stack {
+.pair-stack {
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
   gap: 0.5rem;
-  padding: 1.5rem 1rem;
+  padding: 1rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 0.75rem;
 }
 
-.line {
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-  transition: opacity 150ms, color 150ms;
-  min-height: 1.5rem;
-  word-break: keep-all;
-  line-height: 1.6;
-}
-
-.line.prev {
-  color: var(--muted);
-  opacity: 0.45;
-  font-size: 1.1rem;
-}
-
-.line.next {
-  color: var(--muted);
-  opacity: 0.45;
-  font-size: 1.1rem;
-}
-
-.line .empty {
-  color: var(--muted);
-  opacity: 0.3;
-}
-
-.line.current {
+.pair {
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.4rem;
+  transition: background 150ms;
+}
+
+.pair .check {
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0;
+  justify-content: center;
+  width: 1.2rem;
+  flex-shrink: 0;
+  color: var(--correct);
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-top: 0.1rem;
 }
 
-.target-text {
-  font-size: 1.85rem;
-  line-height: 1.5;
-  letter-spacing: 0.03em;
-  text-align: center;
-  font-weight: 500;
-}
-
-.target-text .tch {
-  position: relative;
-  padding: 0 0.05em;
+.pair .check.pending {
   color: var(--muted);
-  transition: color 120ms;
+  opacity: 0.4;
 }
 
-.target-text .tch.done {
+.pair .pair-target,
+.pair .pair-input {
+  flex: 1 1 auto;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+.pair.prev {
+  color: var(--muted);
+  opacity: 0.55;
+}
+
+.pair.prev .pair-target {
+  font-size: 1rem;
+}
+
+.pair.next {
+  color: var(--muted);
+  opacity: 0.45;
+}
+
+.pair.next .pair-target {
+  font-size: 1rem;
+}
+
+.pair.current {
+  flex-direction: column;
+  align-items: stretch;
+  background: color-mix(in oklab, var(--accent) 6%, transparent);
+  border-left: 3px solid var(--accent);
+  padding: 0.6rem 0.8rem;
+}
+
+.pair.current .pair-target {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.pair.current .pair-input {
+  font-size: 1.5rem;
+  font-weight: 500;
+  background: color-mix(in oklab, var(--accent) 14%, var(--bg));
+  border: 1px solid color-mix(in oklab, var(--accent) 25%, transparent);
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  min-height: 2.4rem;
+  margin-top: 0.4rem;
+  position: relative;
+}
+
+.pair.current .pair-input .placeholder {
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.caret {
+  display: inline-block;
+  width: 0.1rem;
+  height: 1.2em;
+  background: var(--accent);
+  vertical-align: middle;
+  margin-left: 0.05em;
+  animation: caret-blink 1s steps(1) infinite;
+}
+
+@keyframes caret-blink {
+  0%, 50% { opacity: 1; }
+  50.01%, 100% { opacity: 0; }
+}
+
+.tch {
+  padding: 0 0.05em;
+  border-radius: 0.2rem;
+  transition: color 100ms, background 100ms;
+}
+
+.tch.pending {
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+.tch.current {
+  color: var(--text);
+  background: color-mix(in oklab, var(--accent) 22%, transparent);
+}
+
+.tch.correct {
   color: var(--correct);
 }
 
-.target-text .tch.current-char {
-  color: var(--text);
-  background: color-mix(in oklab, var(--accent) 18%, transparent);
-  border-radius: 0.25rem;
+.tch.wrong {
+  color: var(--wrong);
+  background: color-mix(in oklab, var(--wrong) 22%, transparent);
 }
 
-.target-text .tch.space {
-  color: var(--muted);
-  opacity: 0.4;
-  font-size: 0.75em;
+.tch.space {
+  opacity: 0.55;
+  font-size: 0.7em;
   vertical-align: middle;
 }
 
-.target-text .tch.space.done {
-  opacity: 0.7;
+.tch.space.correct {
   color: var(--correct);
 }
 
-.target-text .tch.space.current-char {
-  opacity: 1;
-}
-
-.rendered {
-  font-size: 1.1rem;
-  min-height: 1.6rem;
-  color: var(--text);
-  font-family: ui-monospace, 'Apple SD Gothic Neo', 'Malgun Gothic', monospace;
-  text-align: center;
-}
-
-.rendered .placeholder {
-  color: var(--muted);
-  font-size: 0.9rem;
+.tch.space.wrong {
+  color: var(--wrong);
 }
 
 .line-finished {
-  margin-top: 0.25rem;
+  margin-top: 0.5rem;
   font-size: 0.85rem;
   color: var(--correct);
   background: color-mix(in oklab, var(--correct) 12%, transparent);
   padding: 0.35rem 0.7rem;
   border-radius: 0.4rem;
+  align-self: flex-start;
 }
 
 .line-finished kbd {
@@ -213,11 +264,12 @@
 }
 
 @media (max-width: 720px) {
-  .target-text {
-    font-size: 1.4rem;
+  .pair.current .pair-target,
+  .pair.current .pair-input {
+    font-size: 1.2rem;
   }
-  .line.prev,
-  .line.next {
-    font-size: 0.95rem;
+  .pair.prev .pair-target,
+  .pair.next .pair-target {
+    font-size: 0.9rem;
   }
 }
