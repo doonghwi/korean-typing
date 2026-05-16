@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTypingSession } from '../hooks/useTypingSession'
 import { jamoToKey } from '../hangul/dubeolsik'
 import { Keyboard } from './keyboard/Keyboard'
@@ -9,14 +9,34 @@ import './TypingScreen.css'
 
 interface Props {
   title?: string
-  target: string
+  lines: string[]
   onComplete?: (result: { cpm: number; accuracy: number; seconds: number }) => void
   onNext?: () => void
 }
 
-export const TypingScreen = ({ title, target, onComplete, onNext }: Props) => {
-  const { state, derived, restart } = useTypingSession(target)
+interface LineResult {
+  cpm: number
+  accuracy: number
+  errors: number
+  seconds: number
+}
+
+export const TypingScreen = ({ title, lines, onComplete, onNext }: Props) => {
+  const [lineIdx, setLineIdx] = useState(0)
+  const [lineResults, setLineResults] = useState<LineResult[]>([])
+  const [lessonDone, setLessonDone] = useState(false)
   const [tick, setTick] = useState(0)
+
+  const currentLine = lines[lineIdx] ?? ''
+  const { state, derived, restart } = useTypingSession(currentLine)
+  const justFinishedRef = useRef(false)
+
+  useEffect(() => {
+    setLineIdx(0)
+    setLineResults([])
+    setLessonDone(false)
+    justFinishedRef.current = false
+  }, [lines])
 
   useEffect(() => {
     if (state.finishedAt) return
@@ -26,30 +46,53 @@ export const TypingScreen = ({ title, target, onComplete, onNext }: Props) => {
   }, [state.startedAt, state.finishedAt])
 
   useEffect(() => {
-    if (state.finishedAt && onComplete) {
-      onComplete({
+    if (state.finishedAt && !justFinishedRef.current) {
+      justFinishedRef.current = true
+      const result: LineResult = {
         cpm: derived.charsPerMinute,
         accuracy: derived.accuracy,
+        errors: state.errorCount,
         seconds: derived.elapsedSeconds,
-      })
+      }
+      setLineResults((prev) => [...prev, result])
+    } else if (!state.finishedAt) {
+      justFinishedRef.current = false
     }
-  }, [state.finishedAt, onComplete, derived])
+  }, [state.finishedAt])
+
+  useEffect(() => {
+    if (lineResults.length >= lines.length && lines.length > 0) {
+      setLessonDone(true)
+    }
+  }, [lineResults.length, lines.length])
+
+  useEffect(() => {
+    if (lessonDone && onComplete && lineResults.length > 0) {
+      const avgCpm =
+        lineResults.reduce((s, r) => s + r.cpm, 0) / lineResults.length
+      const avgAcc =
+        lineResults.reduce((s, r) => s + r.accuracy, 0) / lineResults.length
+      const totalSec = lineResults.reduce((s, r) => s + r.seconds, 0)
+      onComplete({ cpm: avgCpm, accuracy: avgAcc, seconds: totalSec })
+    }
+  }, [lessonDone, lineResults, onComplete])
 
   useEffect(() => {
     if (!state.finishedAt) return
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return
-      if (e.key === 'Enter' && onNext) {
+      if (e.key === 'Enter' || e.code === 'Space' || e.key === ' ') {
         e.preventDefault()
-        onNext()
-      } else if ((e.key === 'r' || e.key === 'R') && !e.shiftKey) {
-        e.preventDefault()
-        restart()
+        if (lineIdx < lines.length - 1) {
+          setLineIdx((idx) => idx + 1)
+        } else if (onNext) {
+          onNext()
+        }
       }
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [state.finishedAt, onNext, restart])
+  }, [state.finishedAt, lineIdx, lines.length, onNext])
 
   const liveDerived = state.finishedAt
     ? derived
@@ -69,9 +112,41 @@ export const TypingScreen = ({ title, target, onComplete, onNext }: Props) => {
 
   void tick
 
+  const prevLine = lineIdx > 0 ? lines[lineIdx - 1] : null
+  const nextLine = lineIdx < lines.length - 1 ? lines[lineIdx + 1] : null
+  const isLastLine = lineIdx === lines.length - 1
+
+  const renderTargetChar = (ch: string, i: number) => {
+    const isDone = i < derived.cursorChar
+    const isCurrentChar = i === derived.cursorChar
+    return (
+      <span
+        key={i}
+        className={`tch${isDone ? ' done' : ''}${isCurrentChar ? ' current-char' : ''}${ch === ' ' ? ' space' : ''}`}
+      >
+        {ch === ' ' ? '·' : ch}
+      </span>
+    )
+  }
+
+  const restartLesson = () => {
+    setLineIdx(0)
+    setLineResults([])
+    setLessonDone(false)
+    justFinishedRef.current = false
+    restart()
+  }
+
   return (
     <div className="typing-screen">
-      {title ? <h2 className="lesson-title">{title}</h2> : null}
+      {title ? (
+        <h2 className="lesson-title">
+          {title}{' '}
+          <span className="line-counter">
+            {lineIdx + 1} / {lines.length}
+          </span>
+        </h2>
+      ) : null}
 
       <Stats
         cpm={liveDerived.charsPerMinute}
@@ -80,23 +155,43 @@ export const TypingScreen = ({ title, target, onComplete, onNext }: Props) => {
         errors={state.errorCount}
       />
 
-      <div className="target-text" aria-label="목표 문장">
-        {Array.from(state.target).map((ch, i) => {
-          const isDone = i < derived.cursorChar
-          const isCurrent = i === derived.cursorChar
-          return (
-            <span
-              key={i}
-              className={`tch${isDone ? ' done' : ''}${isCurrent ? ' current' : ''}${ch === ' ' ? ' space' : ''}`}
-            >
-              {ch === ' ' ? '·' : ch}
-            </span>
-          )
-        })}
-      </div>
+      <div className="lines-stack">
+        <div className="line prev">
+          {prevLine !== null ? prevLine.replace(/ /g, '·') : <span className="empty">—</span>}
+        </div>
 
-      <div className="rendered" aria-label="입력한 문장">
-        {derived.rendered || <span className="placeholder">타이핑을 시작하세요…</span>}
+        <div className="line current">
+          <div className="target-text" aria-label="목표 문장">
+            {Array.from(currentLine).map(renderTargetChar)}
+          </div>
+          <div className="rendered" aria-label="입력한 문장">
+            {derived.rendered || (
+              <span className="placeholder">타이핑을 시작하세요…</span>
+            )}
+          </div>
+          {state.finishedAt ? (
+            <div className="line-finished">
+              ✓{' '}
+              {isLastLine ? (
+                onNext ? (
+                  <>
+                    <kbd>Enter</kbd> 또는 <kbd>Space</kbd>로 다음 레슨
+                  </>
+                ) : (
+                  '레슨 완료'
+                )
+              ) : (
+                <>
+                  <kbd>Enter</kbd> 또는 <kbd>Space</kbd>로 다음 줄
+                </>
+              )}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="line next">
+          {nextLine !== null ? nextLine.replace(/ /g, '·') : <span className="empty">—</span>}
+        </div>
       </div>
 
       <div className="keyboard-wrapper">
@@ -105,20 +200,31 @@ export const TypingScreen = ({ title, target, onComplete, onNext }: Props) => {
       </div>
 
       <div className="hint">
-        <kbd>Esc</kbd> 다시 시작 · <kbd>Backspace</kbd> 지우기 · <kbd>Space</kbd> 띄어쓰기
+        <kbd>Esc</kbd> 줄 다시 · <kbd>Backspace</kbd> 지우기 ·{' '}
+        <kbd>Space</kbd> 띄어쓰기 / 다음 줄
       </div>
 
-      {state.finishedAt ? (
+      {lessonDone ? (
         <div className="finished">
           <p>
-            완료! CPM {Math.round(derived.charsPerMinute)} · 정확도{' '}
-            {Math.round(derived.accuracy * 100)}%
+            레슨 완료! 평균 CPM{' '}
+            {Math.round(
+              lineResults.reduce((s, r) => s + r.cpm, 0) /
+                Math.max(1, lineResults.length)
+            )}{' '}
+            · 정확도{' '}
+            {Math.round(
+              (lineResults.reduce((s, r) => s + r.accuracy, 0) /
+                Math.max(1, lineResults.length)) *
+                100
+            )}
+            %
           </p>
           <div className="actions">
-            <button onClick={restart}>다시 (R)</button>
+            <button onClick={restartLesson}>전체 다시</button>
             {onNext ? (
               <button className="primary" onClick={onNext}>
-                다음 (Enter)
+                다음 레슨 (Enter)
               </button>
             ) : null}
           </div>

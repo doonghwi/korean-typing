@@ -76,7 +76,7 @@ function App() {
               <TypingScreen
                 key={lesson.id}
                 title={`${lesson.id} · ${lesson.title}`}
-                target={lesson.target}
+                lines={lesson.lines}
                 onComplete={onComplete}
                 onNext={nextLessonId(lesson.id) ? goNext : undefined}
               />

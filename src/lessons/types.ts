@@ -2,7 +2,7 @@ export interface Lesson {
   id: string
   stageId: number
   title: string
-  target: string
+  lines: string[]
 }
 
 export interface Stage {
