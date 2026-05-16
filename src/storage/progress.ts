@@ -69,7 +69,7 @@ export const getProgress = (name: string): UserProgress => {
   }
 }
 
-const MIN_RECORD_LENGTH = 5
+const MIN_RECORD_LENGTH = 7
 
 export const recordLine = (
   name: string,

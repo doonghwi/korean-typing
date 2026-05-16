@@ -72,7 +72,7 @@ const RecentRow = ({ r }: { r: LineRecord }) => (
 )
 
 export const Profile = ({ userName, onStart, onSwitchUser }: Props) => {
-  const [source, setSource] = useState<string>('random')
+  const [source, setSource] = useState<string>(SOURCES[0]?.value ?? 'stage-1')
   const today = getTodayBest(userName)
   const allTime = getAllTimeBest(userName)
   const recent = getRecentRecords(userName, 6)
