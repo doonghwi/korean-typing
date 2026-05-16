@@ -5,13 +5,30 @@ export interface StageResult {
   lastAt: number
 }
 
+export interface SessionRecord {
+  at: number
+  stageId: number
+  cpm: number
+  accuracy: number
+}
+
 export interface UserProgress {
   stageResults: Record<number, StageResult>
+  sessions: SessionRecord[]
+}
+
+export interface BestRecord {
+  cpm: number
+  accuracy: number
+  at: number
+  stageId: number
 }
 
 const USERS_KEY = 'taza:users'
 const CURRENT_USER_KEY = 'taza:current-user'
 const userKey = (name: string) => `taza:user:${name}:progress-v2`
+
+const MAX_SESSIONS = 500
 
 const readJson = <T,>(key: string): T | null => {
   try {
@@ -49,8 +66,13 @@ export const clearCurrentUser = (): void => {
   localStorage.removeItem(CURRENT_USER_KEY)
 }
 
-export const getProgress = (name: string): UserProgress =>
-  readJson<UserProgress>(userKey(name)) ?? { stageResults: {} }
+export const getProgress = (name: string): UserProgress => {
+  const raw = readJson<Partial<UserProgress>>(userKey(name))
+  return {
+    stageResults: raw?.stageResults ?? {},
+    sessions: raw?.sessions ?? [],
+  }
+}
 
 export const recordStageResult = (
   name: string,
@@ -66,5 +88,44 @@ export const recordStageResult = (
     attempts: (prev?.attempts ?? 0) + 1,
     lastAt: Date.now(),
   }
+  progress.sessions.push({ at: Date.now(), stageId, cpm, accuracy })
+  if (progress.sessions.length > MAX_SESSIONS) {
+    progress.sessions = progress.sessions.slice(-MAX_SESSIONS)
+  }
   writeJson(userKey(name), progress)
+}
+
+const startOfToday = (): number => {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d.getTime()
+}
+
+const bestOf = (sessions: SessionRecord[]): BestRecord | null => {
+  if (sessions.length === 0) return null
+  let best = sessions[0]
+  for (const s of sessions) {
+    if (s.cpm > best.cpm) best = s
+  }
+  return { cpm: best.cpm, accuracy: best.accuracy, at: best.at, stageId: best.stageId }
+}
+
+export const getTodayBest = (name: string): BestRecord | null => {
+  const today = startOfToday()
+  const sessions = getProgress(name).sessions.filter((s) => s.at >= today)
+  return bestOf(sessions)
+}
+
+export const getAllTimeBest = (name: string): BestRecord | null =>
+  bestOf(getProgress(name).sessions)
+
+export const getRecentSessions = (name: string, n = 8): SessionRecord[] => {
+  const sessions = getProgress(name).sessions
+  return sessions.slice(-n).reverse()
+}
+
+export const getTodayStats = (name: string): { sessions: number; totalSeconds: number } => {
+  const today = startOfToday()
+  const todaySessions = getProgress(name).sessions.filter((s) => s.at >= today)
+  return { sessions: todaySessions.length, totalSeconds: 0 }
 }

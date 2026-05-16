@@ -1,0 +1,211 @@
+.profile {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--accent) 25%, transparent);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  border: 1px solid color-mix(in oklab, var(--accent) 40%, transparent);
+}
+
+.profile-name-row {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.profile-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.profile-meta {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.profile .switch {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.4rem;
+  font-size: 0.8rem;
+}
+
+.profile .switch:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.stat-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.stat-card.primary {
+  background: color-mix(in oklab, var(--accent) 10%, var(--surface));
+  border-color: color-mix(in oklab, var(--accent) 35%, var(--border));
+}
+
+.sc-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.sc-value {
+  font-size: 2.2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  line-height: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.stat-card.primary .sc-value {
+  color: var(--accent);
+}
+
+.sc-unit {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.sc-sub {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.recent h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.recent .empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.recent ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.recent-row {
+  display: grid;
+  grid-template-columns: 4rem 1fr auto auto;
+  gap: 0.75rem;
+  padding: 0.5rem 0.9rem;
+  align-items: baseline;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.recent-row:last-child {
+  border-bottom: none;
+}
+
+.recent-row .rr-when {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.recent-row .rr-stage {
+  color: var(--text);
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-row .rr-cpm {
+  color: var(--correct);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.recent-row .rr-acc {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+}
+
+.start-btn {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: white;
+  padding: 0.85rem 1.5rem;
+  border-radius: 0.6rem;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  margin-top: 0.5rem;
+}
+
+.start-btn:hover {
+  background: color-mix(in oklab, var(--accent) 85%, black);
+}
+
+@media (max-width: 480px) {
+  .stat-cards {
+    grid-template-columns: 1fr;
+  }
+  .sc-value {
+    font-size: 1.8rem;
+  }
+  .recent-row {
+    grid-template-columns: 4rem 1fr auto;
+  }
+  .recent-row .rr-acc {
+    display: none;
+  }
+}
