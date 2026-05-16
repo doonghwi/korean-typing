@@ -46,4 +46,21 @@ describe('decomposeText', () => {
   it('handles mixed content', () => {
     expect(decomposeText('한2')).toEqual(['ㅎ', 'ㅏ', 'ㄴ', '2'])
   })
+
+  it('splits standalone composite vowels', () => {
+    expect(decomposeText('ㅚ')).toEqual(['ㅗ', 'ㅣ'])
+    expect(decomposeText('ㅞ')).toEqual(['ㅜ', 'ㅔ'])
+    expect(decomposeText('ㅘ')).toEqual(['ㅗ', 'ㅏ'])
+    expect(decomposeText('ㅢ')).toEqual(['ㅡ', 'ㅣ'])
+  })
+
+  it('splits standalone composite jongseong', () => {
+    expect(decomposeText('ㄳ')).toEqual(['ㄱ', 'ㅅ'])
+    expect(decomposeText('ㅄ')).toEqual(['ㅂ', 'ㅅ'])
+  })
+
+  it('leaves simple jamo as-is', () => {
+    expect(decomposeText('ㅏ')).toEqual(['ㅏ'])
+    expect(decomposeText('ㄱ')).toEqual(['ㄱ'])
+  })
 })

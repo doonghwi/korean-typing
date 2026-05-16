@@ -26,6 +26,10 @@ export const decomposeText = (text: string): string[] => {
   for (const ch of text) {
     if (isHangulSyllable(ch)) {
       out.push(...decomposeSyllable(ch))
+    } else if (VOWEL_SPLIT[ch]) {
+      out.push(...VOWEL_SPLIT[ch])
+    } else if (JONG_SPLIT[ch]) {
+      out.push(...JONG_SPLIT[ch])
     } else {
       out.push(ch)
     }

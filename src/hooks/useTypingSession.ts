@@ -8,8 +8,10 @@ import {
   inputJamo,
   inputLiteral,
   isHangulSyllable,
+  JONG_SPLIT,
   keyToJamo,
   renderState,
+  VOWEL_SPLIT,
 } from '../hangul'
 import { codeToKeyChar } from '../hangul/dubeolsik'
 
@@ -103,6 +105,10 @@ const computeBoundaries = (target: string): number[] => {
   for (const ch of target) {
     if (isHangulSyllable(ch)) {
       count += decomposeSyllable(ch).length
+    } else if (VOWEL_SPLIT[ch]) {
+      count += VOWEL_SPLIT[ch].length
+    } else if (JONG_SPLIT[ch]) {
+      count += JONG_SPLIT[ch].length
     } else {
       count += 1
     }
