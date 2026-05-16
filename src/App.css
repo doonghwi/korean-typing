@@ -21,3 +21,24 @@
   font-size: 0.9rem;
   margin: 0;
 }
+
+.back-row {
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.back-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 0.3rem 0.7rem;
+  border-radius: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.back-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}

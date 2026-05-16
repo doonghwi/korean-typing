@@ -1,0 +1,73 @@
+.user-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 3rem 1rem;
+}
+
+.user-picker h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.user-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  max-width: 400px;
+}
+
+.user-btn {
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1rem;
+  transition: background 120ms, border-color 120ms;
+}
+
+.user-btn:hover {
+  background: var(--key);
+  border-color: var(--accent);
+}
+
+.new-user {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.new-user input {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1rem;
+  font-family: inherit;
+  width: 12rem;
+}
+
+.new-user input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: var(--accent);
+}
+
+.new-user button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: white;
+  font-size: 0.95rem;
+}
+
+.new-user button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
