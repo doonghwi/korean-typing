@@ -4,7 +4,7 @@ import './LessonList.css'
 
 interface Props {
   userName: string
-  onPick: (lessonId: string) => void
+  onPick: (stageId: number) => void
   onSwitchUser: () => void
 }
 
@@ -15,40 +15,40 @@ export const LessonList = ({ userName, onPick, onSwitchUser }: Props) => {
       <div className="header">
         <div className="user-row">
           <span className="who">{userName}</span>
-          <button className="switch" onClick={onSwitchUser}>다른 사용자</button>
+          <button className="switch" onClick={onSwitchUser}>
+            다른 사용자
+          </button>
         </div>
       </div>
-      {STAGES.map((stage) => (
-        <section key={stage.id} className="stage">
-          <h2 className="stage-title">{stage.title}</h2>
-          <p className="stage-desc">{stage.description}</p>
-          <ul className="lessons">
-            {stage.lessons.map((l) => {
-              const r = progress.results[l.id]
-              return (
-                <li key={l.id}>
-                  <button className="lesson-btn" onClick={() => onPick(l.id)}>
-                    <div className="left">
-                      <div className="lid">{l.id}</div>
-                      <div className="ltitle">{l.title}</div>
-                    </div>
-                    <div className="right">
-                      {r ? (
-                        <>
-                          <span className="cpm">{Math.round(r.bestCpm)} CPM</span>
-                          <span className="acc">{Math.round(r.bestAccuracy * 100)}%</span>
-                        </>
-                      ) : (
-                        <span className="new">시작</span>
-                      )}
-                    </div>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        </section>
-      ))}
+
+      <ul className="stages">
+        {STAGES.map((stage) => {
+          const r = progress.stageResults[stage.id]
+          const totalLines = stage.lessons.reduce((s, l) => s + l.lines.length, 0)
+          return (
+            <li key={stage.id}>
+              <button className="stage-btn" onClick={() => onPick(stage.id)}>
+                <div className="stage-left">
+                  <div className="stage-title">{stage.title}</div>
+                  <div className="stage-desc">{stage.description}</div>
+                  <div className="stage-meta">{totalLines}개 항목 · 랜덤 순서</div>
+                </div>
+                <div className="stage-right">
+                  {r ? (
+                    <>
+                      <div className="cpm">{Math.round(r.bestCpm)} CPM</div>
+                      <div className="acc">{Math.round(r.bestAccuracy * 100)}%</div>
+                      <div className="attempts">{r.attempts}회</div>
+                    </>
+                  ) : (
+                    <div className="new">시작 →</div>
+                  )}
+                </div>
+              </button>
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 }

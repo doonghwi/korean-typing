@@ -1,16 +1,20 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { TypingScreen } from './components/TypingScreen'
 import { LessonList } from './components/LessonList'
 import { UserPicker } from './components/UserPicker'
-import { findLesson, nextLessonId } from './lessons/data'
+import { findStage, nextStageId, stageLines } from './lessons/data'
 import {
   clearCurrentUser,
   getCurrentUser,
-  recordResult,
+  recordStageResult,
 } from './storage/progress'
+import { shuffle } from './utils/shuffle'
 import './App.css'
 
-type View = { kind: 'pick-user' } | { kind: 'list' } | { kind: 'lesson'; id: string }
+type View =
+  | { kind: 'pick-user' }
+  | { kind: 'list' }
+  | { kind: 'stage'; id: number; sessionKey: number }
 
 function App() {
   const [user, setUser] = useState<string | null>(() => getCurrentUser())
@@ -29,24 +33,34 @@ function App() {
     setView({ kind: 'pick-user' })
   }, [])
 
-  const openLesson = useCallback((id: string) => {
-    setView({ kind: 'lesson', id })
+  const openStage = useCallback((stageId: number) => {
+    setView({ kind: 'stage', id: stageId, sessionKey: Date.now() })
   }, [])
 
-  const goNext = useCallback(() => {
-    if (view.kind !== 'lesson') return
-    const nxt = nextLessonId(view.id)
-    setView(nxt ? { kind: 'lesson', id: nxt } : { kind: 'list' })
+  const goNextStage = useCallback(() => {
+    if (view.kind !== 'stage') return
+    const nxt = nextStageId(view.id)
+    if (nxt !== null) {
+      setView({ kind: 'stage', id: nxt, sessionKey: Date.now() })
+    } else {
+      setView({ kind: 'list' })
+    }
   }, [view])
 
   const onComplete = useCallback(
     (r: { cpm: number; accuracy: number; seconds: number }) => {
-      if (user && view.kind === 'lesson') {
-        recordResult(user, view.id, r.cpm, r.accuracy)
+      if (user && view.kind === 'stage') {
+        recordStageResult(user, view.id, r.cpm, r.accuracy)
       }
     },
     [user, view]
   )
+
+  const stage = view.kind === 'stage' ? findStage(view.id) : null
+  const shuffledLines = useMemo(() => {
+    if (view.kind !== 'stage' || !stage) return []
+    return shuffle(stageLines(stage))
+  }, [view.kind === 'stage' ? view.sessionKey : null, stage])
 
   return (
     <main className="app">
@@ -58,31 +72,22 @@ function App() {
       {view.kind === 'pick-user' ? (
         <UserPicker onPick={pickUser} />
       ) : view.kind === 'list' && user ? (
-        <LessonList userName={user} onPick={openLesson} onSwitchUser={switchUser} />
-      ) : view.kind === 'lesson' ? (
-        (() => {
-          const lesson = findLesson(view.id)
-          if (!lesson) {
-            setView({ kind: 'list' })
-            return null
-          }
-          return (
-            <>
-              <div className="back-row">
-                <button className="back-btn" onClick={() => setView({ kind: 'list' })}>
-                  ← 레슨 목록
-                </button>
-              </div>
-              <TypingScreen
-                key={lesson.id}
-                title={`${lesson.id} · ${lesson.title}`}
-                lines={lesson.lines}
-                onComplete={onComplete}
-                onNext={nextLessonId(lesson.id) ? goNext : undefined}
-              />
-            </>
-          )
-        })()
+        <LessonList userName={user} onPick={openStage} onSwitchUser={switchUser} />
+      ) : view.kind === 'stage' && stage ? (
+        <>
+          <div className="back-row">
+            <button className="back-btn" onClick={() => setView({ kind: 'list' })}>
+              ← 단계 목록
+            </button>
+          </div>
+          <TypingScreen
+            key={view.sessionKey}
+            title={stage.title}
+            lines={shuffledLines}
+            onComplete={onComplete}
+            onNext={nextStageId(stage.id) !== null ? goNextStage : undefined}
+          />
+        </>
       ) : null}
     </main>
   )

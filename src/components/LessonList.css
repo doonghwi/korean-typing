@@ -4,7 +4,7 @@
   padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .lesson-list .header .user-row {
@@ -37,80 +37,90 @@
   color: var(--text);
 }
 
-.stage-title {
-  margin: 0 0 0.25rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.stage-desc {
-  margin: 0 0 1rem;
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.lessons {
+.stages {
   list-style: none;
   padding: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
-.lesson-btn {
+.stage-btn {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1rem;
+  padding: 1rem 1.25rem;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 0.6rem;
+  border-radius: 0.75rem;
   color: var(--text);
   font-family: inherit;
-  font-size: 0.95rem;
   text-align: left;
-  transition: border-color 120ms, background 120ms;
+  transition: border-color 120ms, background 120ms, transform 80ms;
+  gap: 1rem;
 }
 
-.lesson-btn:hover {
+.stage-btn:hover {
   border-color: var(--accent);
   background: var(--key);
+  transform: translateY(-1px);
 }
 
-.lesson-btn .left {
+.stage-left {
   display: flex;
-  align-items: baseline;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-.lesson-btn .lid {
-  font-family: ui-monospace, Consolas, monospace;
-  color: var(--muted);
-  font-size: 0.8rem;
-  min-width: 2rem;
-}
-
-.lesson-btn .ltitle {
-  font-weight: 500;
-}
-
-.lesson-btn .right {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  font-size: 0.85rem;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.lesson-btn .cpm {
-  color: var(--correct);
+.stage-title {
+  font-size: 1rem;
   font-weight: 600;
 }
 
-.lesson-btn .new {
+.stage-desc {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.stage-meta {
+  font-size: 0.75rem;
+  color: var(--muted);
+  opacity: 0.7;
+  margin-top: 0.15rem;
+}
+
+.stage-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+  font-variant-numeric: tabular-nums;
+  min-width: 5rem;
+}
+
+.stage-right .cpm {
+  color: var(--correct);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.stage-right .acc {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.stage-right .attempts {
+  font-size: 0.7rem;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+.stage-right .new {
   color: var(--accent);
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 0.95rem;
 }

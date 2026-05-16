@@ -304,3 +304,15 @@ export const nextLessonId = (id: string): string | null => {
   if (idx < 0 || idx >= ALL_LESSONS.length - 1) return null
   return ALL_LESSONS[idx + 1].id
 }
+
+export const findStage = (id: number): Stage | null =>
+  STAGES.find((s) => s.id === id) ?? null
+
+export const stageLines = (stage: Stage): string[] =>
+  stage.lessons.flatMap((l) => l.lines)
+
+export const nextStageId = (id: number): number | null => {
+  const idx = STAGES.findIndex((s) => s.id === id)
+  if (idx < 0 || idx >= STAGES.length - 1) return null
+  return STAGES[idx + 1].id
+}

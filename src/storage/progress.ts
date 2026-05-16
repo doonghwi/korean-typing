@@ -1,4 +1,4 @@
-export interface LessonResult {
+export interface StageResult {
   bestCpm: number
   bestAccuracy: number
   attempts: number
@@ -6,12 +6,12 @@ export interface LessonResult {
 }
 
 export interface UserProgress {
-  results: Record<string, LessonResult>
+  stageResults: Record<number, StageResult>
 }
 
 const USERS_KEY = 'taza:users'
 const CURRENT_USER_KEY = 'taza:current-user'
-const userKey = (name: string) => `taza:user:${name}:progress`
+const userKey = (name: string) => `taza:user:${name}:progress-v2`
 
 const readJson = <T,>(key: string): T | null => {
   try {
@@ -50,22 +50,21 @@ export const clearCurrentUser = (): void => {
 }
 
 export const getProgress = (name: string): UserProgress =>
-  readJson<UserProgress>(userKey(name)) ?? { results: {} }
+  readJson<UserProgress>(userKey(name)) ?? { stageResults: {} }
 
-export const recordResult = (
+export const recordStageResult = (
   name: string,
-  lessonId: string,
+  stageId: number,
   cpm: number,
   accuracy: number
 ): void => {
   const progress = getProgress(name)
-  const prev = progress.results[lessonId]
-  const next: LessonResult = {
+  const prev = progress.stageResults[stageId]
+  progress.stageResults[stageId] = {
     bestCpm: prev ? Math.max(prev.bestCpm, cpm) : cpm,
     bestAccuracy: prev ? Math.max(prev.bestAccuracy, accuracy) : accuracy,
     attempts: (prev?.attempts ?? 0) + 1,
     lastAt: Date.now(),
   }
-  progress.results[lessonId] = next
   writeJson(userKey(name), progress)
 }
