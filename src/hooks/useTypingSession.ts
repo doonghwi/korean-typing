@@ -5,6 +5,7 @@ import {
   decomposeText,
   initialState,
   inputJamo,
+  inputLiteral,
   keyToJamo,
   renderState,
 } from '../hangul'
@@ -22,6 +23,7 @@ export interface SessionState {
 
 type Action =
   | { type: 'jamo'; jamo: string }
+  | { type: 'literal'; ch: string }
   | { type: 'backspace' }
   | { type: 'restart'; target: string }
 
@@ -43,9 +45,13 @@ const reducer = (state: SessionState, action: Action): SessionState => {
     return { ...state, composer: backspace(state.composer) }
   }
 
+  const inputChar = action.type === 'jamo' ? action.jamo : action.ch
   const expected = state.targetJamo[state.inputCount]
-  const isCorrect = expected === action.jamo
-  const nextComposer = inputJamo(state.composer, action.jamo)
+  const isCorrect = expected === inputChar
+  const nextComposer =
+    action.type === 'jamo'
+      ? inputJamo(state.composer, action.jamo)
+      : inputLiteral(state.composer, action.ch)
   const nextInputCount = state.inputCount + 1
   const nextErrors = state.errorCount + (isCorrect ? 0 : 1)
   const startedAt = state.startedAt ?? Date.now()
@@ -119,6 +125,12 @@ export const useTypingSession = (target: string) => {
       if (e.key === 'Escape') {
         e.preventDefault()
         dispatch({ type: 'restart', target: stateRef.current.target })
+        return
+      }
+
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault()
+        dispatch({ type: 'literal', ch: ' ' })
         return
       }
 

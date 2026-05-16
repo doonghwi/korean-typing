@@ -10,6 +10,14 @@ const jamoForKey = (def: KeyDef, shift: boolean) =>
   DUBEOLSIK[shift ? def.shift : def.base] ?? null
 
 const Key = ({ def, isNext, needsShift }: { def: KeyDef; isNext: boolean; needsShift: boolean }) => {
+  const isSpace = def.code === 'Space'
+  if (isSpace) {
+    return (
+      <div className={`key space${isNext ? ' next' : ''}`} data-finger={def.finger}>
+        <span className="ascii">Space</span>
+      </div>
+    )
+  }
   const baseJamo = jamoForKey(def, false)
   const shiftJamo = jamoForKey(def, true)
   return (

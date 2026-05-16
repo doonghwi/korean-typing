@@ -57,6 +57,9 @@ export const KEYBOARD_ROWS: KeyDef[][] = [
     { code: 'KeyN', base: 'n', shift: 'N', finger: 'RI' },
     { code: 'KeyM', base: 'm', shift: 'M', finger: 'RI' },
   ],
+  [
+    { code: 'Space', base: ' ', shift: ' ', finger: 'thumb' },
+  ],
 ]
 
 const ALL_KEYS: KeyDef[] = KEYBOARD_ROWS.flat()

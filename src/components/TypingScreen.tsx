@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useTypingSession } from '../hooks/useTypingSession'
 import { jamoToKey } from '../hangul/dubeolsik'
 import { Keyboard } from './keyboard/Keyboard'
-import { Hands } from './keyboard/Hands'
+import { HandOverlay } from './keyboard/HandOverlay'
+import { findKeyByChar } from './keyboard/layout'
 import { Stats } from './Stats'
 import './TypingScreen.css'
 
@@ -34,11 +35,39 @@ export const TypingScreen = ({ title, target, onComplete, onNext }: Props) => {
     }
   }, [state.finishedAt, onComplete, derived])
 
-  const liveDerived = state.finishedAt ? derived : { ...derived, elapsedSeconds: state.startedAt ? (Date.now() - state.startedAt) / 1000 : 0 }
+  useEffect(() => {
+    if (!state.finishedAt) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (e.key === 'Enter' && onNext) {
+        e.preventDefault()
+        onNext()
+      } else if ((e.key === 'r' || e.key === 'R') && !e.shiftKey) {
+        e.preventDefault()
+        restart()
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [state.finishedAt, onNext, restart])
 
-  const nextKey = derived.expectedJamo ? jamoToKey(derived.expectedJamo) : null
+  const liveDerived = state.finishedAt
+    ? derived
+    : {
+        ...derived,
+        elapsedSeconds: state.startedAt ? (Date.now() - state.startedAt) / 1000 : 0,
+      }
 
-  void tick // ensure rerender for elapsed timer
+  const expectedJamo = derived.expectedJamo
+  const nextKeyChar =
+    expectedJamo === ' '
+      ? ' '
+      : expectedJamo
+      ? jamoToKey(expectedJamo)
+      : null
+  const activeFinger = nextKeyChar ? findKeyByChar(nextKeyChar)?.finger ?? null : null
+
+  void tick
 
   return (
     <div className="typing-screen">
@@ -58,9 +87,9 @@ export const TypingScreen = ({ title, target, onComplete, onNext }: Props) => {
           return (
             <span
               key={i}
-              className={`tch${isDone ? ' done' : ''}${isCurrent ? ' current' : ''}`}
+              className={`tch${isDone ? ' done' : ''}${isCurrent ? ' current' : ''}${ch === ' ' ? ' space' : ''}`}
             >
-              {ch === ' ' ? ' ' : ch}
+              {ch === ' ' ? '·' : ch}
             </span>
           )
         })}
@@ -70,19 +99,28 @@ export const TypingScreen = ({ title, target, onComplete, onNext }: Props) => {
         {derived.rendered || <span className="placeholder">타이핑을 시작하세요…</span>}
       </div>
 
-      <Keyboard nextKeyChar={nextKey} />
-      <Hands nextKeyChar={nextKey} />
+      <div className="keyboard-wrapper">
+        <Keyboard nextKeyChar={nextKeyChar} />
+        <HandOverlay activeFinger={activeFinger} />
+      </div>
 
       <div className="hint">
-        <kbd>Esc</kbd> 다시 시작 · <kbd>Backspace</kbd> 한 글자 지우기
+        <kbd>Esc</kbd> 다시 시작 · <kbd>Backspace</kbd> 지우기 · <kbd>Space</kbd> 띄어쓰기
       </div>
 
       {state.finishedAt ? (
         <div className="finished">
-          <p>완료! CPM {Math.round(derived.charsPerMinute)} · 정확도 {Math.round(derived.accuracy * 100)}%</p>
+          <p>
+            완료! CPM {Math.round(derived.charsPerMinute)} · 정확도{' '}
+            {Math.round(derived.accuracy * 100)}%
+          </p>
           <div className="actions">
             <button onClick={restart}>다시 (R)</button>
-            {onNext ? <button className="primary" onClick={onNext}>다음 (Enter)</button> : null}
+            {onNext ? (
+              <button className="primary" onClick={onNext}>
+                다음 (Enter)
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}

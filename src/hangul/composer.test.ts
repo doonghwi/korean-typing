@@ -120,6 +120,29 @@ describe('composer: backspace', () => {
   })
 })
 
+describe('composer: literal (space) commits working syllable', () => {
+  it('commits 가 + space when space pressed mid-word', async () => {
+    const { initialState, inputJamo, inputLiteral, renderState } = await import('./composer')
+    let s = initialState()
+    s = inputJamo(s, 'ㄱ')
+    s = inputJamo(s, 'ㅏ')
+    s = inputLiteral(s, ' ')
+    expect(renderState(s)).toBe('가 ')
+    expect(s.working).toEqual({})
+  })
+
+  it('commits composite syllable on space', async () => {
+    const { initialState, inputJamo, inputLiteral, renderState } = await import('./composer')
+    let s = initialState()
+    s = inputJamo(s, 'ㄷ')
+    s = inputJamo(s, 'ㅏ')
+    s = inputJamo(s, 'ㄹ')
+    s = inputJamo(s, 'ㄱ')
+    s = inputLiteral(s, ' ')
+    expect(renderState(s)).toBe('닭 ')
+  })
+})
+
 describe('composer: ignores unmapped keys', () => {
   it('ignores numbers and symbols', () => {
     expect(result('rk1')).toBe('가')

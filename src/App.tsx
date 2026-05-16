@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { TypingScreen } from './components/TypingScreen'
 import { LessonList } from './components/LessonList'
 import { UserPicker } from './components/UserPicker'
@@ -47,18 +47,6 @@ function App() {
     },
     [user, view]
   )
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (view.kind !== 'lesson') return
-      if (e.key === 'Enter') {
-        e.preventDefault()
-        goNext()
-      }
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [view, goNext])
 
   return (
     <main className="app">

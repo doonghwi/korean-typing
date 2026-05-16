@@ -117,6 +117,11 @@ export const inputJamo = (state: ComposerState, jamo: string): ComposerState => 
   return state
 }
 
+export const inputLiteral = (state: ComposerState, ch: string): ComposerState => ({
+  committed: state.committed + syllableToString(state.working) + ch,
+  working: {},
+})
+
 export const backspace = (state: ComposerState): ComposerState => {
   const { committed, working } = state
 

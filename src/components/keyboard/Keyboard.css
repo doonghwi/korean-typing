@@ -4,6 +4,8 @@
   gap: 0.4rem;
   user-select: none;
   align-items: center;
+  position: relative;
+  z-index: 1;
 }
 
 .kb-row {
@@ -17,6 +19,11 @@
 
 .kb-row[data-row='2'] {
   margin-left: 2.4rem;
+}
+
+.kb-row[data-row='3'] {
+  margin-top: 0.2rem;
+  justify-content: center;
 }
 
 .key {
@@ -34,6 +41,11 @@
   font-size: 0.85rem;
   color: var(--muted);
   transition: background 120ms, color 120ms, transform 80ms;
+}
+
+.key.space {
+  width: 14rem;
+  justify-content: center;
 }
 
 .key.next {
@@ -85,6 +97,9 @@
   .key {
     width: 2.4rem;
     height: 2.8rem;
+  }
+  .key.space {
+    width: 11rem;
   }
   .kb-row[data-row='1'] {
     margin-left: 0.8rem;
