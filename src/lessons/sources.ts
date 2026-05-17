@@ -68,8 +68,13 @@ export const sectionOfSource = (source: string): SectionKind | null => {
   return null
 }
 
-export const isSourceRankingEligible = (source: string): boolean =>
-  source === SENTENCES_SHORT || source === SENTENCES_LONG
+const MIN_WORD_RANKING_LENGTH = 2
+
+export const isRecordRankingEligible = (source: string, text: string): boolean => {
+  if (source === SENTENCES_SHORT || source === SENTENCES_LONG) return true
+  if (WORDS_RE.test(source) && text.trim().length >= MIN_WORD_RANKING_LENGTH) return true
+  return false
+}
 
 export const POSITION_OPTIONS = POSITION_STAGES.map((s) => ({
   value: positionSource(s.id),

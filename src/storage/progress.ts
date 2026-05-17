@@ -1,4 +1,4 @@
-import { isSourceRankingEligible } from '../lessons/sources'
+import { isRecordRankingEligible } from '../lessons/sources'
 import { pushRecord } from './cloudRanking'
 
 export interface LineRecord {
@@ -90,7 +90,7 @@ export const recordLine = (
   }
   writeJson(userKey(name), progress)
 
-  if (!isSourceRankingEligible(source)) return
+  if (!isRecordRankingEligible(source, text)) return
   void pushRecord({
     user: name,
     source,
@@ -121,13 +121,16 @@ const bestOf = (records: LineRecord[]): BestRecord | null => {
   }
 }
 
+const rankingRecords = (name: string): LineRecord[] =>
+  getProgress(name).records.filter((r) => isRecordRankingEligible(r.source, r.text))
+
 export const getTodayBest = (name: string): BestRecord | null => {
   const today = startOfToday()
-  return bestOf(getProgress(name).records.filter((r) => r.at >= today))
+  return bestOf(rankingRecords(name).filter((r) => r.at >= today))
 }
 
 export const getAllTimeBest = (name: string): BestRecord | null =>
-  bestOf(getProgress(name).records)
+  bestOf(rankingRecords(name))
 
 export const getRecentRecords = (name: string, n = 8): LineRecord[] => {
   const records = getProgress(name).records
