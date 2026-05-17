@@ -45,7 +45,6 @@ const init = (target: string): SessionState => ({
 
 const reducer = (state: SessionState, action: Action): SessionState => {
   if (action.type === 'restart') return init(action.target)
-  if (state.finishedAt) return state
 
   if (action.type === 'backspace') {
     if (state.inputCount === 0) return state
@@ -58,8 +57,11 @@ const reducer = (state: SessionState, action: Action): SessionState => {
       inputs: state.inputs.slice(0, -1),
       inputCount: state.inputCount - 1,
       errorCount: wasError ? Math.max(0, state.errorCount - 1) : state.errorCount,
+      finishedAt: null,
     }
   }
+
+  if (state.finishedAt) return state
 
   const inputChar = action.type === 'jamo' ? action.jamo : action.ch
   const expected = state.targetJamo[state.inputCount]

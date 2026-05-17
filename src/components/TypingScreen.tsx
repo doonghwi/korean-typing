@@ -7,6 +7,12 @@ import { findKeyByChar } from './keyboard/layout'
 import { Stats } from './Stats'
 import './TypingScreen.css'
 
+const expectedToKeyChar = (expected: string | null): string | null => {
+  if (!expected) return null
+  if (expected === ' ') return ' '
+  return jamoToKey(expected) ?? expected
+}
+
 interface Props {
   title?: string
   lines: string[]
@@ -43,15 +49,14 @@ export const TypingScreen = ({
 
   const currentLine = lines[lineIdx] ?? ''
   const { state, derived, restart } = useTypingSession(currentLine)
-  const justFinishedRef = useRef(false)
   const onLineCompleteRef = useRef(onLineComplete)
   onLineCompleteRef.current = onLineComplete
+  const advanceRef = useRef<() => void>(() => {})
 
   useEffect(() => {
     setLineIdx(0)
     setLineResults([])
     setAllDone(false)
-    justFinishedRef.current = false
   }, [lines])
 
   useEffect(() => {
@@ -61,28 +66,27 @@ export const TypingScreen = ({
     return () => window.clearInterval(id)
   }, [state.startedAt, state.finishedAt])
 
-  useEffect(() => {
-    if (state.finishedAt && !justFinishedRef.current) {
-      justFinishedRef.current = true
-      const result: LineResult = {
+  advanceRef.current = () => {
+    if (!state.finishedAt) return
+    const result: LineResult = {
+      cpm: derived.charsPerMinute,
+      accuracy: derived.accuracy,
+      errors: state.errorCount,
+      seconds: derived.elapsedSeconds,
+    }
+    setLineResults((prev) => [...prev, result])
+    if (onLineCompleteRef.current) {
+      onLineCompleteRef.current({
         cpm: derived.charsPerMinute,
         accuracy: derived.accuracy,
-        errors: state.errorCount,
         seconds: derived.elapsedSeconds,
-      }
-      setLineResults((prev) => [...prev, result])
-      if (onLineCompleteRef.current) {
-        onLineCompleteRef.current({
-          cpm: derived.charsPerMinute,
-          accuracy: derived.accuracy,
-          seconds: derived.elapsedSeconds,
-          text: currentLine,
-        })
-      }
-    } else if (!state.finishedAt) {
-      justFinishedRef.current = false
+        text: currentLine,
+      })
     }
-  }, [state.finishedAt])
+    if (lineIdx < lines.length - 1) {
+      setLineIdx((idx) => idx + 1)
+    }
+  }
 
   useEffect(() => {
     if (lineResults.length >= lines.length && lines.length > 0) {
@@ -100,14 +104,12 @@ export const TypingScreen = ({
       if (e.metaKey || e.ctrlKey || e.altKey) return
       if (e.key === 'Enter' || e.code === 'Space' || e.key === ' ') {
         e.preventDefault()
-        if (lineIdx < lines.length - 1) {
-          setLineIdx((idx) => idx + 1)
-        }
+        advanceRef.current()
       }
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [state.finishedAt, lineIdx, lines.length])
+  }, [state.finishedAt])
 
   const liveDerived = state.finishedAt
     ? derived
@@ -117,12 +119,7 @@ export const TypingScreen = ({
       }
 
   const expectedJamo = derived.expectedJamo
-  const nextKeyChar =
-    expectedJamo === ' '
-      ? ' '
-      : expectedJamo
-      ? jamoToKey(expectedJamo)
-      : null
+  const nextKeyChar = expectedToKeyChar(expectedJamo)
   const activeFinger = nextKeyChar ? findKeyByChar(nextKeyChar)?.finger ?? null : null
 
   void tick
@@ -166,11 +163,9 @@ export const TypingScreen = ({
     setLineIdx(0)
     setLineResults([])
     setAllDone(false)
-    justFinishedRef.current = false
     restart()
   }
 
-  const lastResult = lineResults[lineResults.length - 1]
   const renderedChars = Array.from(derived.rendered)
 
   return (
@@ -211,15 +206,17 @@ export const TypingScreen = ({
             )}
             <span className="caret" />
           </div>
-          {state.finishedAt && lastResult ? (
+          {state.finishedAt ? (
             <div className="line-finished">
-              ✓ {Math.round(lastResult.cpm)} CPM ·{' '}
-              {Math.round(lastResult.accuracy * 100)}%
+              ✓ {Math.round(derived.charsPerMinute)} CPM ·{' '}
+              {Math.round(derived.accuracy * 100)}%
               {isLastLine ? (
-                ' — 마지막 줄'
+                <>
+                  {' '}— <kbd>Enter</kbd> 또는 <kbd>Space</kbd>로 마무리 (틀렸으면 <kbd>Backspace</kbd>)
+                </>
               ) : (
                 <>
-                  {' '}— <kbd>Enter</kbd> 또는 <kbd>Space</kbd>로 다음 줄
+                  {' '}— <kbd>Enter</kbd> 또는 <kbd>Space</kbd>로 다음 줄 (틀렸으면 <kbd>Backspace</kbd>)
                 </>
               )}
             </div>
