@@ -67,7 +67,7 @@
 
 .lb-row {
   display: grid;
-  grid-template-columns: 1.6rem 5rem 1fr auto auto;
+  grid-template-columns: 1.6rem 5rem minmax(0, 1fr) auto auto;
   gap: 0.6rem;
   align-items: baseline;
   padding: 0.5rem 0.85rem;
@@ -132,7 +132,7 @@
 
 @media (max-width: 520px) {
   .lb-row {
-    grid-template-columns: 1.4rem 4rem 1fr auto;
+    grid-template-columns: 1.4rem 4rem minmax(0, 1fr) auto;
   }
   .lb-row .lb-acc {
     display: none;
