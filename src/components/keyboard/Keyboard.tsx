@@ -9,12 +9,24 @@ interface Props {
 const jamoForKey = (def: KeyDef, shift: boolean) =>
   DUBEOLSIK[shift ? def.shift : def.base] ?? null
 
+const isLetterCode = (code: string) => code.startsWith('Key')
+
 const Key = ({ def, isNext, needsShift }: { def: KeyDef; isNext: boolean; needsShift: boolean }) => {
   const isSpace = def.code === 'Space'
   if (isSpace) {
     return (
       <div className={`key space${isNext ? ' next' : ''}`} data-finger={def.finger}>
         <span className="ascii">Space</span>
+      </div>
+    )
+  }
+  if (!isLetterCode(def.code)) {
+    return (
+      <div className={`key punct${isNext ? ' next' : ''}`} data-finger={def.finger}>
+        <span className="jamo">{def.base}</span>
+        {def.shift !== def.base ? (
+          <span className="jamo-shift">{def.shift}</span>
+        ) : null}
       </div>
     )
   }

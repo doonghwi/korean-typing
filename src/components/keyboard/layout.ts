@@ -56,6 +56,9 @@ export const KEYBOARD_ROWS: KeyDef[][] = [
     { code: 'KeyB', base: 'b', shift: 'B', finger: 'LI' },
     { code: 'KeyN', base: 'n', shift: 'N', finger: 'RI' },
     { code: 'KeyM', base: 'm', shift: 'M', finger: 'RI' },
+    { code: 'Comma', base: ',', shift: '<', finger: 'RM' },
+    { code: 'Period', base: '.', shift: '>', finger: 'RR' },
+    { code: 'Slash', base: '/', shift: '?', finger: 'RP' },
   ],
   [
     { code: 'Space', base: ' ', shift: ' ', finger: 'thumb' },

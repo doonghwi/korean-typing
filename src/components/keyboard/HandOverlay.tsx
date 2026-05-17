@@ -1,4 +1,4 @@
-import { KEYBOARD_ROWS, findKeyByChar, type Finger } from './layout'
+import { KEYBOARD_ROWS, type Finger } from './layout'
 import './HandOverlay.css'
 
 interface Props {
@@ -38,12 +38,21 @@ const FINGER_HOME: Record<Finger, { x: number; y: number }> = {
 
 const SHIFT_FACTOR = 0.55
 
-const fingerCls = (active: Finger | null, f: Finger) =>
-  `finger${active === f ? ' active' : ''}`
+const needsShiftFor = (keyChar: string | null): boolean =>
+  !!keyChar && ((keyChar >= 'A' && keyChar <= 'Z') || '<>?'.includes(keyChar))
+
+const oppositeShiftPinky = (typingFinger: Finger | null): Finger | null => {
+  if (!typingFinger || typingFinger === 'thumb') return null
+  return typingFinger.startsWith('L') ? 'RP' : 'LP'
+}
 
 export const HandOverlay = ({ activeFinger, nextKeyChar }: Props) => {
   const target = nextKeyChar ? keyPosition(nextKeyChar) : null
   const home = activeFinger ? FINGER_HOME[activeFinger] : null
+
+  const shiftFinger = needsShiftFor(nextKeyChar)
+    ? oppositeShiftPinky(activeFinger)
+    : null
 
   let dx = 0
   let dy = 0
@@ -55,6 +64,13 @@ export const HandOverlay = ({ activeFinger, nextKeyChar }: Props) => {
   const leftXform = activeFinger?.startsWith('L') ? `translate(${dx} ${dy})` : ''
   const rightXform = activeFinger?.startsWith('R') ? `translate(${dx} ${dy})` : ''
   const thumbActive = activeFinger === 'thumb'
+
+  const fingerCls = (f: Finger): string => {
+    const classes = ['finger']
+    if (activeFinger === f) classes.push('active')
+    if (shiftFinger === f) classes.push('shift')
+    return classes.join(' ')
+  }
 
   return (
     <svg
@@ -76,10 +92,10 @@ export const HandOverlay = ({ activeFinger, nextKeyChar }: Props) => {
           ry="8"
           transform="rotate(-28 46 48)"
         />
-        <rect className={fingerCls(activeFinger, 'LP')} x="5.04" y="20" width="6" height="22" rx="3" />
-        <rect className={fingerCls(activeFinger, 'LR')} x="15.16" y="14" width="6" height="28" rx="3" />
-        <rect className={fingerCls(activeFinger, 'LM')} x="25.27" y="10" width="6" height="32" rx="3" />
-        <rect className={fingerCls(activeFinger, 'LI')} x="35.39" y="14" width="6" height="28" rx="3" />
+        <rect className={fingerCls('LP')} x="5.04" y="20" width="6" height="22" rx="3" />
+        <rect className={fingerCls('LR')} x="15.16" y="14" width="6" height="28" rx="3" />
+        <rect className={fingerCls('LM')} x="25.27" y="10" width="6" height="32" rx="3" />
+        <rect className={fingerCls('LI')} x="35.39" y="14" width="6" height="28" rx="3" />
       </g>
 
       <g className="hand right" transform={rightXform}>
@@ -95,13 +111,11 @@ export const HandOverlay = ({ activeFinger, nextKeyChar }: Props) => {
           ry="8"
           transform="rotate(28 54 48)"
         />
-        <rect className={fingerCls(activeFinger, 'RI')} x="65.75" y="14" width="6" height="28" rx="3" />
-        <rect className={fingerCls(activeFinger, 'RM')} x="75.87" y="10" width="6" height="32" rx="3" />
-        <rect className={fingerCls(activeFinger, 'RR')} x="85.99" y="14" width="6" height="28" rx="3" />
-        <rect className={fingerCls(activeFinger, 'RP')} x="92" y="20" width="6" height="22" rx="3" />
+        <rect className={fingerCls('RI')} x="65.75" y="14" width="6" height="28" rx="3" />
+        <rect className={fingerCls('RM')} x="75.87" y="10" width="6" height="32" rx="3" />
+        <rect className={fingerCls('RR')} x="85.99" y="14" width="6" height="28" rx="3" />
+        <rect className={fingerCls('RP')} x="92" y="20" width="6" height="22" rx="3" />
       </g>
     </svg>
   )
 }
-
-void findKeyByChar
