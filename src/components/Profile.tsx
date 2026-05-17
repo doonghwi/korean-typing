@@ -77,7 +77,6 @@ const RecentRow = ({ r }: { r: LineRecord }) => (
 
 interface SectionProps {
   title: string
-  subtitle: string
   value: string
   onChange: (v: string) => void
   onStart: () => void
@@ -86,17 +85,13 @@ interface SectionProps {
 
 const PracticeSection = ({
   title,
-  subtitle,
   value,
   onChange,
   onStart,
   children,
 }: SectionProps) => (
   <section className="practice-section">
-    <div className="ps-header">
-      <h3>{title}</h3>
-      <span className="ps-sub">{subtitle}</span>
-    </div>
+    <h3 className="ps-title">{title}</h3>
     <div className="start-row">
       <label className="source-select">
         <select value={value} onChange={(e) => onChange(e.target.value)}>
@@ -147,7 +142,6 @@ export const Profile = ({ userName, onStart, onSwitchUser }: Props) => {
       <div className="practice-sections">
         <PracticeSection
           title="자리연습"
-          subtitle="단계별 자판 위치 익히기"
           value={positionSrc}
           onChange={setPositionSrc}
           onStart={() => onStart(positionSrc)}
@@ -161,7 +155,6 @@ export const Profile = ({ userName, onStart, onSwitchUser }: Props) => {
 
         <PracticeSection
           title="단어연습"
-          subtitle="배운 자판까지의 단어로 연습"
           value={wordsSrc}
           onChange={setWordsSrc}
           onStart={() => onStart(wordsSrc)}
@@ -175,7 +168,6 @@ export const Profile = ({ userName, onStart, onSwitchUser }: Props) => {
 
         <PracticeSection
           title="문장연습"
-          subtitle="전체 셔플로 진행. 랭킹에 등록됩니다."
           value={sentenceSrc}
           onChange={setSentenceSrc}
           onStart={() => onStart(sentenceSrc)}
