@@ -144,7 +144,12 @@ vite.config.ts             # base: '/korean-typing/' + vitest 설정
 
 드롭다운은 **2 옵션만**. 시작하면 해당 카테고리의 모든 라인을 풀해서 셔플 (레슨 단위 선택 없음).
 
-**랭킹**: `isSourceRankingEligible(source)` → `sentences-short` / `sentences-long`만 `true`. cloud push는 이 둘만. 나머지(자리·단어)는 로컬 저장만.
+**랭킹**: `isRecordRankingEligible(source, text)` 기준.
+- `sentences-short` / `sentences-long`: 항상 true
+- `words-*`: `text.trim().length >= 2` 이면 true (1글자 단어 제외)
+- `position-*`: 항상 false (자리연습은 짧아서 CPM 왜곡)
+
+랭킹 자격이 있는 레코드만 cloud push (`pushRecord`) + 로컬의 `getTodayBest`/`getAllTimeBest` 집계에 포함. 모든 줄은 로컬 progress에 저장 (최근 기록 리스트는 자격 무관 노출).
 
 **미래 계획**: 긴글연습에 사용자 커스텀 글귀 추가/선택 기능 예정 (사용자가 "알아만 둬"로 언급). 커스텀이 추가되면 드롭다운에 `<optgroup>`으로 짧은/긴/내 글귀 그룹화하거나 별도 옵션. 저작권 이슈 때문에 사용자 본인 작성만 허용.
 
@@ -233,7 +238,11 @@ LineRecord = { at, source, cpm, accuracy, text }
 - 한 자모라도 틀린 글자는 빨간색 표시
 - 완료 조건: `inputCount >= targetJamo.length` (틀려도 전부 치면 다음으로) OR `rendered === target` (완벽)
 
-**리터럴 입력**: 마침표·쉼표·숫자 등은 `e.key.length === 1` fallback으로 `inputLiteral` 호출. 공백도 동일.
+**완료 후 백스페이스**: reducer의 backspace 처리는 `finishedAt` 가드를 우회. 완료된 줄에서 백스페이스 누르면 마지막 자모를 지우고 `finishedAt: null`로 unfinish. 사용자가 잘못 친 글자 수정 가능.
+
+**줄 결과 저장 시점**: `state.finishedAt`이 truthy가 되는 순간이 아니라 **Enter/Space (다음 줄)** 누를 때 `setLineResults` push + `onLineComplete` 호출. 백스페이스 후 재완료해도 중복 저장 없음. TypingScreen의 `advanceRef.current` 패턴 사용.
+
+**리터럴 입력**: 마침표·쉼표·숫자 등은 `e.key.length === 1` fallback으로 `inputLiteral` 호출. 공백도 동일. 목표에 마침표 같은 구두점이 있을 때 `expectedToKeyChar`가 jamo 변환 실패 시 원본 문자 그대로 사용 → `findKeyByChar('.')`가 layout의 Period 키 매칭.
 
 **테스트 41개**: composer 33 + decompose 8. 모두 통과 중. 한글 엔진 수정 시 반드시 `npx vitest run`.
 
@@ -325,8 +334,13 @@ git commit -m "..."
 
 ## 14. 핸드오프 시점 라이브 상태
 
-- 마지막 커밋: `a342759` — 문장연습 두 옵션만 두고 전체 셔플
-- 직전: `ce6f2f0` — 3섹션 재구성 / `aa36b36` — 복합자모 입력 버그 픽스
+- 최근 커밋:
+  - `7445d95` — 단어연습 2글자+ 랭킹 등록 (로컬 + cloud)
+  - `f12345c` — 키보드에 `, . /` 추가 + 쌍자음 Shift 새끼손가락 시각화
+  - `d9335b0` — 완료 후 백스페이스 가능 + 결과 저장은 Enter/Space로 지연
+  - `e2dea2d` — HANDOFF docs 갱신
+  - `a342759` — 문장연습 두 옵션만 두고 전체 셔플
+  - `ce6f2f0` — 3섹션 재구성 / `aa36b36` — 복합자모 입력 버그 픽스
 - 모든 변경사항 push됨 (working tree clean)
 - 41개 테스트 통과 중
 - 빌드 OK (111KB gzipped)
