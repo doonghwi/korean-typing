@@ -90,7 +90,7 @@ export const recordLine = (
   }
   writeJson(userKey(name), progress)
 
-  if (!isRecordRankingEligible(source, text)) return
+  if (!isRecordRankingEligible(source, text, accuracy)) return
   void pushRecord({
     user: name,
     source,
@@ -122,7 +122,9 @@ const bestOf = (records: LineRecord[]): BestRecord | null => {
 }
 
 const rankingRecords = (name: string): LineRecord[] =>
-  getProgress(name).records.filter((r) => isRecordRankingEligible(r.source, r.text))
+  getProgress(name).records.filter((r) =>
+    isRecordRankingEligible(r.source, r.text, r.accuracy)
+  )
 
 export const getTodayBest = (name: string): BestRecord | null => {
   const today = startOfToday()
