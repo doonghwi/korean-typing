@@ -180,7 +180,14 @@ export const useTypingSession = (target: string) => {
 
       const keyChar = codeToKeyChar(e.code, e.shiftKey)
       if (keyChar) {
-        const jamo = keyToJamo(keyChar)
+        let jamo = keyToJamo(keyChar)
+        if (!jamo && e.shiftKey) {
+          // 빠른 타이핑에서 Shift가 다음 키까지 눌린 상태로 넘어가면
+          // 대문자에 jamo 매핑이 없는 키(예: J/K/F 등)가 literal로
+          // 빠져서 자모가 분리됨. 대문자 실패 시 base(소문자) 매핑으로
+          // 폴백해서 사용자 의도대로 조합되게 함.
+          jamo = keyToJamo(keyChar.toLowerCase())
+        }
         if (jamo) {
           e.preventDefault()
           dispatch({ type: 'jamo', jamo })
