@@ -1,4 +1,4 @@
-import { isRecordRankingEligible } from '../lessons/sources'
+import { isRecordRankingEligible, langOfSource, type Lang } from '../lessons/sources'
 import { pushRecord } from './cloudRanking'
 
 export interface LineRecord {
@@ -7,6 +7,7 @@ export interface LineRecord {
   cpm: number
   accuracy: number
   text: string
+  lang?: Lang
 }
 
 export interface UserProgress {
@@ -19,11 +20,13 @@ export interface BestRecord {
   at: number
   source: string
   text: string
+  lang?: Lang
 }
 
 const USERS_KEY = 'taza:users'
 const CURRENT_USER_KEY = 'taza:current-user'
 const userKey = (name: string) => `taza:user:${name}:progress-v3`
+const userLangKey = (name: string) => `taza:user:${name}:lang`
 
 const MAX_RECORDS = 1000
 
@@ -63,12 +66,24 @@ export const clearCurrentUser = (): void => {
   localStorage.removeItem(CURRENT_USER_KEY)
 }
 
+export const getUserLang = (name: string): Lang => {
+  const v = localStorage.getItem(userLangKey(name))
+  return v === 'en' ? 'en' : 'ko'
+}
+
+export const setUserLang = (name: string, lang: Lang): void => {
+  localStorage.setItem(userLangKey(name), lang)
+}
+
 export const getProgress = (name: string): UserProgress => {
   const raw = readJson<Partial<UserProgress>>(userKey(name))
   return {
     records: raw?.records ?? [],
   }
 }
+
+// Legacy records may not have `lang` — derive from source for filtering.
+const recordLang = (r: LineRecord): Lang => r.lang ?? langOfSource(r.source)
 
 export const recordLine = (
   name: string,
@@ -78,12 +93,14 @@ export const recordLine = (
   text: string
 ): void => {
   const progress = getProgress(name)
+  const lang = langOfSource(source)
   progress.records.push({
     at: Date.now(),
     source,
     cpm,
     accuracy,
     text: text.slice(0, 80),
+    lang,
   })
   if (progress.records.length > MAX_RECORDS) {
     progress.records = progress.records.slice(-MAX_RECORDS)
@@ -97,6 +114,7 @@ export const recordLine = (
     cpm,
     accuracy,
     text: text.slice(0, 80),
+    lang,
   })
 }
 
@@ -118,28 +136,32 @@ const bestOf = (records: LineRecord[]): BestRecord | null => {
     at: best.at,
     source: best.source,
     text: best.text,
+    lang: recordLang(best),
   }
 }
 
-const rankingRecords = (name: string): LineRecord[] =>
-  getProgress(name).records.filter((r) =>
-    isRecordRankingEligible(r.source, r.text, r.accuracy)
+const rankingRecords = (name: string, lang: Lang): LineRecord[] =>
+  getProgress(name).records.filter(
+    (r) =>
+      recordLang(r) === lang && isRecordRankingEligible(r.source, r.text, r.accuracy)
   )
 
-export const getTodayBest = (name: string): BestRecord | null => {
+export const getTodayBest = (name: string, lang: Lang): BestRecord | null => {
   const today = startOfToday()
-  return bestOf(rankingRecords(name).filter((r) => r.at >= today))
+  return bestOf(rankingRecords(name, lang).filter((r) => r.at >= today))
 }
 
-export const getAllTimeBest = (name: string): BestRecord | null =>
-  bestOf(rankingRecords(name))
+export const getAllTimeBest = (name: string, lang: Lang): BestRecord | null =>
+  bestOf(rankingRecords(name, lang))
 
-export const getRecentRecords = (name: string, n = 8): LineRecord[] => {
-  const records = getProgress(name).records
+export const getRecentRecords = (name: string, n: number, lang: Lang): LineRecord[] => {
+  const records = getProgress(name).records.filter((r) => recordLang(r) === lang)
   return records.slice(-n).reverse()
 }
 
-export const getTodayCount = (name: string): number => {
+export const getTodayCount = (name: string, lang: Lang): number => {
   const today = startOfToday()
-  return getProgress(name).records.filter((r) => r.at >= today).length
+  return getProgress(name).records.filter(
+    (r) => recordLang(r) === lang && r.at >= today
+  ).length
 }

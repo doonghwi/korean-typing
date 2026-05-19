@@ -6,8 +6,12 @@ interface Props {
   nextKeyChar: string | null
 }
 
-const ROW_Y = [7, 23, 39, 53]
-const ROW_INDENT_PCT = [0, 3.57, 7.14]
+// Row Y in SVG viewBox units (0–60). With the number row added above the
+// original top row, numbers sit slightly outside the viewBox; overflow:visible
+// in the CSS lets the target marker render there anyway.
+const ROW_Y = [-5, 7, 23, 39, 53]
+// Indent per row (% of keyboard width). Mirrors margin-left in Keyboard.css.
+const ROW_INDENT_PCT = [0, 1.79, 3.57, 7.14]
 const SLOT_W_PCT = ((3 + 0.4) / 33.6) * 100
 
 const keyPosition = (keyChar: string): { x: number; y: number } | null => {
@@ -15,7 +19,7 @@ const keyPosition = (keyChar: string): { x: number; y: number } | null => {
     const row = KEYBOARD_ROWS[r]
     const idx = row.findIndex((k) => k.base === keyChar || k.shift === keyChar)
     if (idx < 0) continue
-    if (r === 3) return { x: 50, y: ROW_Y[3] }
+    if (r === 4) return { x: 50, y: ROW_Y[4] }
     return {
       x: ROW_INDENT_PCT[r] + (idx + 0.5) * SLOT_W_PCT,
       y: ROW_Y[r],

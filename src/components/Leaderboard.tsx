@@ -4,10 +4,12 @@ import {
   fetchTopRecords,
   type CloudRecord,
 } from '../storage/cloudRanking'
+import type { Lang } from '../lessons/sources'
 import './Leaderboard.css'
 
 interface Props {
   userName: string
+  lang: Lang
   refreshKey?: number
 }
 
@@ -17,23 +19,28 @@ const Row = ({
   r,
   rank,
   me,
+  lang,
 }: {
   r: CloudRecord
   rank: number
   me: boolean
-}) => (
-  <li className={`lb-row${me ? ' me' : ''}`}>
-    <span className="lb-rank">{rank}</span>
-    <span className="lb-user">{r.user}</span>
-    <span className="lb-text" title={r.text}>
-      {r.text}
-    </span>
-    <span className="lb-cpm">{Math.round(r.cpm)}</span>
-    <span className="lb-acc">{Math.round(r.accuracy * 100)}%</span>
-  </li>
-)
+  lang: Lang
+}) => {
+  const value = lang === 'en' ? Math.round(r.cpm / 5) : Math.round(r.cpm)
+  return (
+    <li className={`lb-row${me ? ' me' : ''}`}>
+      <span className="lb-rank">{rank}</span>
+      <span className="lb-user">{r.user}</span>
+      <span className="lb-text" title={r.text}>
+        {r.text}
+      </span>
+      <span className="lb-cpm">{value}</span>
+      <span className="lb-acc">{Math.round(r.accuracy * 100)}%</span>
+    </li>
+  )
+}
 
-export const Leaderboard = ({ userName, refreshKey }: Props) => {
+export const Leaderboard = ({ userName, lang, refreshKey }: Props) => {
   const [mode, setMode] = useState<Mode>('all')
   const [allRecords, setAllRecords] = useState<CloudRecord[] | null>(null)
   const [todayRecords, setTodayRecords] = useState<CloudRecord[] | null>(null)
@@ -43,7 +50,7 @@ export const Leaderboard = ({ userName, refreshKey }: Props) => {
   useEffect(() => {
     setLoading(true)
     setError(null)
-    Promise.all([fetchTopRecords(10), fetchTodayTopRecords(10)])
+    Promise.all([fetchTopRecords(lang, 10), fetchTodayTopRecords(lang, 10)])
       .then(([all, today]) => {
         setAllRecords(all)
         setTodayRecords(today)
@@ -53,14 +60,15 @@ export const Leaderboard = ({ userName, refreshKey }: Props) => {
         setError(String(err))
         setLoading(false)
       })
-  }, [refreshKey])
+  }, [refreshKey, lang])
 
   const records = mode === 'all' ? allRecords : todayRecords
+  const unitLabel = lang === 'en' ? 'WPM' : 'CPM'
 
   return (
     <section className="leaderboard">
       <div className="lb-header">
-        <h3>🏆 랭킹</h3>
+        <h3>🏆 랭킹 ({unitLabel})</h3>
         <div className="lb-tabs">
           <button
             className={mode === 'all' ? 'active' : ''}
@@ -95,6 +103,7 @@ export const Leaderboard = ({ userName, refreshKey }: Props) => {
               r={r}
               rank={i + 1}
               me={r.user === userName}
+              lang={lang}
             />
           ))}
         </ol>

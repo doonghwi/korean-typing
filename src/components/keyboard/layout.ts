@@ -25,6 +25,20 @@ export const FINGER_LABEL: Record<Finger, string> = {
 export const FINGER_ORDER: Finger[] = ['LP', 'LR', 'LM', 'LI', 'RI', 'RM', 'RR', 'RP']
 
 export const KEYBOARD_ROWS: KeyDef[][] = [
+  // Row 0: numbers
+  [
+    { code: 'Digit1', base: '1', shift: '!', finger: 'LP' },
+    { code: 'Digit2', base: '2', shift: '@', finger: 'LR' },
+    { code: 'Digit3', base: '3', shift: '#', finger: 'LM' },
+    { code: 'Digit4', base: '4', shift: '$', finger: 'LI' },
+    { code: 'Digit5', base: '5', shift: '%', finger: 'LI' },
+    { code: 'Digit6', base: '6', shift: '^', finger: 'RI' },
+    { code: 'Digit7', base: '7', shift: '&', finger: 'RI' },
+    { code: 'Digit8', base: '8', shift: '*', finger: 'RM' },
+    { code: 'Digit9', base: '9', shift: '(', finger: 'RR' },
+    { code: 'Digit0', base: '0', shift: ')', finger: 'RP' },
+  ],
+  // Row 1: top row
   [
     { code: 'KeyQ', base: 'q', shift: 'Q', finger: 'LP' },
     { code: 'KeyW', base: 'w', shift: 'W', finger: 'LR' },
@@ -37,6 +51,7 @@ export const KEYBOARD_ROWS: KeyDef[][] = [
     { code: 'KeyO', base: 'o', shift: 'O', finger: 'RR' },
     { code: 'KeyP', base: 'p', shift: 'P', finger: 'RP' },
   ],
+  // Row 2: home row
   [
     { code: 'KeyA', base: 'a', shift: 'A', finger: 'LP' },
     { code: 'KeyS', base: 's', shift: 'S', finger: 'LR' },
@@ -47,7 +62,10 @@ export const KEYBOARD_ROWS: KeyDef[][] = [
     { code: 'KeyJ', base: 'j', shift: 'J', finger: 'RI' },
     { code: 'KeyK', base: 'k', shift: 'K', finger: 'RM' },
     { code: 'KeyL', base: 'l', shift: 'L', finger: 'RR' },
+    { code: 'Semicolon', base: ';', shift: ':', finger: 'RP' },
+    { code: 'Quote', base: "'", shift: '"', finger: 'RP' },
   ],
+  // Row 3: bottom row
   [
     { code: 'KeyZ', base: 'z', shift: 'Z', finger: 'LP' },
     { code: 'KeyX', base: 'x', shift: 'X', finger: 'LR' },
@@ -60,6 +78,7 @@ export const KEYBOARD_ROWS: KeyDef[][] = [
     { code: 'Period', base: '.', shift: '>', finger: 'RR' },
     { code: 'Slash', base: '/', shift: '?', finger: 'RP' },
   ],
+  // Row 4: space
   [
     { code: 'Space', base: ' ', shift: ' ', finger: 'thumb' },
   ],

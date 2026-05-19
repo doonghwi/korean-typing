@@ -14,14 +14,18 @@
 }
 
 .kb-row[data-row='1'] {
-  margin-left: 1.2rem;
+  margin-left: 0.6rem;
 }
 
 .kb-row[data-row='2'] {
-  margin-left: 2.4rem;
+  margin-left: 1.2rem;
 }
 
 .kb-row[data-row='3'] {
+  margin-left: 2.4rem;
+}
+
+.kb-row[data-row='4'] {
   margin-top: 0.2rem;
   justify-content: center;
 }
@@ -102,9 +106,12 @@
     width: 11rem;
   }
   .kb-row[data-row='1'] {
-    margin-left: 0.8rem;
+    margin-left: 0.4rem;
   }
   .kb-row[data-row='2'] {
+    margin-left: 0.8rem;
+  }
+  .kb-row[data-row='3'] {
     margin-left: 1.6rem;
   }
 }

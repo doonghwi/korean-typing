@@ -9,14 +9,20 @@ import {
 } from '../storage/progress'
 import {
   POSITION_OPTIONS,
+  POSITION_OPTIONS_EN,
   SENTENCE_OPTIONS,
+  SENTENCE_OPTIONS_EN,
   WORD_OPTIONS,
+  WORD_OPTIONS_EN,
+  type Lang,
 } from '../lessons/sources'
 import { Leaderboard } from './Leaderboard'
 import './Profile.css'
 
 interface Props {
   userName: string
+  lang: Lang
+  onLangChange: (lang: Lang) => void
   onStart: (source: string) => void
   onSwitchUser: () => void
 }
@@ -38,16 +44,20 @@ const StatCard = ({
   label,
   record,
   variant,
+  unit,
+  formatValue,
 }: {
   label: string
   record: BestRecord | null
   variant?: 'primary'
+  unit: string
+  formatValue: (cpm: number) => number
 }) => (
   <div className={`stat-card${variant === 'primary' ? ' primary' : ''}`}>
     <div className="sc-label">{label}</div>
     <div className="sc-value">
-      {record ? Math.round(record.cpm) : '—'}
-      <span className="sc-unit">CPM</span>
+      {record ? formatValue(record.cpm) : '—'}
+      <span className="sc-unit">{unit}</span>
     </div>
     <div className="sc-sub">
       {record ? (
@@ -64,13 +74,23 @@ const StatCard = ({
   </div>
 )
 
-const RecentRow = ({ r }: { r: LineRecord }) => (
+const RecentRow = ({
+  r,
+  unit,
+  formatValue,
+}: {
+  r: LineRecord
+  unit: string
+  formatValue: (cpm: number) => number
+}) => (
   <li className="recent-row">
     <span className="rr-when">{formatRelative(r.at)}</span>
     <span className="rr-text" title={r.text}>
       {r.text}
     </span>
-    <span className="rr-cpm">{Math.round(r.cpm)} CPM</span>
+    <span className="rr-cpm">
+      {formatValue(r.cpm)} {unit}
+    </span>
     <span className="rr-acc">{Math.round(r.accuracy * 100)}%</span>
   </li>
 )
@@ -105,21 +125,73 @@ const PracticeSection = ({
   </section>
 )
 
-export const Profile = ({ userName, onStart, onSwitchUser }: Props) => {
+const LangToggle = ({
+  lang,
+  onChange,
+}: {
+  lang: Lang
+  onChange: (lang: Lang) => void
+}) => (
+  <div className="lang-toggle" role="tablist" aria-label="언어 선택">
+    <button
+      role="tab"
+      aria-selected={lang === 'ko'}
+      className={lang === 'ko' ? 'active' : ''}
+      onClick={() => onChange('ko')}
+    >
+      한국어
+    </button>
+    <button
+      role="tab"
+      aria-selected={lang === 'en'}
+      className={lang === 'en' ? 'active' : ''}
+      onClick={() => onChange('en')}
+    >
+      English
+    </button>
+  </div>
+)
+
+export const Profile = ({
+  userName,
+  lang,
+  onLangChange,
+  onStart,
+  onSwitchUser,
+}: Props) => {
+  const positionOptions = lang === 'en' ? POSITION_OPTIONS_EN : POSITION_OPTIONS
+  const wordOptions = lang === 'en' ? WORD_OPTIONS_EN : WORD_OPTIONS
+  const sentenceOptions = lang === 'en' ? SENTENCE_OPTIONS_EN : SENTENCE_OPTIONS
+
   const [positionSrc, setPositionSrc] = useState<string>(
-    POSITION_OPTIONS[0]?.value ?? ''
+    positionOptions[0]?.value ?? ''
   )
   const [wordsSrc, setWordsSrc] = useState<string>(
-    WORD_OPTIONS[WORD_OPTIONS.length - 1]?.value ?? ''
+    wordOptions[wordOptions.length - 1]?.value ?? ''
   )
   const [sentenceSrc, setSentenceSrc] = useState<string>(
-    SENTENCE_OPTIONS[0]?.value ?? ''
+    sentenceOptions[0]?.value ?? ''
   )
 
-  const today = getTodayBest(userName)
-  const allTime = getAllTimeBest(userName)
-  const recent = getRecentRecords(userName, 6)
-  const todayCount = getTodayCount(userName)
+  // Reset dropdown selections when the language changes so the user starts
+  // from a sensible default in the new language.
+  const [prevLang, setPrevLang] = useState<Lang>(lang)
+  if (prevLang !== lang) {
+    setPrevLang(lang)
+    setPositionSrc(positionOptions[0]?.value ?? '')
+    setWordsSrc(wordOptions[wordOptions.length - 1]?.value ?? '')
+    setSentenceSrc(sentenceOptions[0]?.value ?? '')
+  }
+
+  const today = getTodayBest(userName, lang)
+  const allTime = getAllTimeBest(userName, lang)
+  const recent = getRecentRecords(userName, 6, lang)
+  const todayCount = getTodayCount(userName, lang)
+
+  const isEn = lang === 'en'
+  const unit = isEn ? 'WPM' : 'CPM'
+  const formatValue = (cpm: number) =>
+    isEn ? Math.round(cpm / 5) : Math.round(cpm)
 
   return (
     <div className="profile">
@@ -127,16 +199,31 @@ export const Profile = ({ userName, onStart, onSwitchUser }: Props) => {
         <div className="avatar">{userName.slice(0, 1).toUpperCase()}</div>
         <div className="profile-name-row">
           <div className="profile-name">{userName}</div>
-          <div className="profile-meta">오늘 친 줄 {todayCount}개</div>
+          <div className="profile-meta">
+            오늘 친 줄 {todayCount}개 · {lang === 'en' ? '영어' : '한국어'}
+          </div>
         </div>
         <button className="switch" onClick={onSwitchUser}>
           다른 사용자
         </button>
       </div>
 
+      <LangToggle lang={lang} onChange={onLangChange} />
+
       <div className="stat-cards">
-        <StatCard label="오늘 최고 타수" record={today} />
-        <StatCard label="역대 최고 타수" record={allTime} variant="primary" />
+        <StatCard
+          label="오늘 최고 타수"
+          record={today}
+          unit={unit}
+          formatValue={formatValue}
+        />
+        <StatCard
+          label="역대 최고 타수"
+          record={allTime}
+          variant="primary"
+          unit={unit}
+          formatValue={formatValue}
+        />
       </div>
 
       <div className="practice-sections">
@@ -146,7 +233,7 @@ export const Profile = ({ userName, onStart, onSwitchUser }: Props) => {
           onChange={setPositionSrc}
           onStart={() => onStart(positionSrc)}
         >
-          {POSITION_OPTIONS.map((o) => (
+          {positionOptions.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
             </option>
@@ -159,7 +246,7 @@ export const Profile = ({ userName, onStart, onSwitchUser }: Props) => {
           onChange={setWordsSrc}
           onStart={() => onStart(wordsSrc)}
         >
-          {WORD_OPTIONS.map((o) => (
+          {wordOptions.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
             </option>
@@ -172,7 +259,7 @@ export const Profile = ({ userName, onStart, onSwitchUser }: Props) => {
           onChange={setSentenceSrc}
           onStart={() => onStart(sentenceSrc)}
         >
-          {SENTENCE_OPTIONS.map((o) => (
+          {sentenceOptions.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
             </option>
@@ -180,7 +267,7 @@ export const Profile = ({ userName, onStart, onSwitchUser }: Props) => {
         </PracticeSection>
       </div>
 
-      <Leaderboard userName={userName} />
+      <Leaderboard userName={userName} lang={lang} />
 
       <section className="recent">
         <h3>내 최근 기록</h3>
@@ -189,7 +276,12 @@ export const Profile = ({ userName, onStart, onSwitchUser }: Props) => {
         ) : (
           <ul>
             {recent.map((r) => (
-              <RecentRow key={r.at} r={r} />
+              <RecentRow
+                key={r.at}
+                r={r}
+                unit={unit}
+                formatValue={formatValue}
+              />
             ))}
           </ul>
         )}

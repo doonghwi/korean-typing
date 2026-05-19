@@ -1,9 +1,11 @@
 import { KEYBOARD_ROWS, findKeyByChar, type KeyDef } from './layout'
 import { DUBEOLSIK } from '../../hangul/dubeolsik'
+import type { Lang } from '../../lessons/sources'
 import './Keyboard.css'
 
 interface Props {
   nextKeyChar: string | null
+  lang?: Lang
 }
 
 const jamoForKey = (def: KeyDef, shift: boolean) =>
@@ -11,7 +13,17 @@ const jamoForKey = (def: KeyDef, shift: boolean) =>
 
 const isLetterCode = (code: string) => code.startsWith('Key')
 
-const Key = ({ def, isNext, needsShift }: { def: KeyDef; isNext: boolean; needsShift: boolean }) => {
+const Key = ({
+  def,
+  isNext,
+  needsShift,
+  showJamo,
+}: {
+  def: KeyDef
+  isNext: boolean
+  needsShift: boolean
+  showJamo: boolean
+}) => {
   const isSpace = def.code === 'Space'
   if (isSpace) {
     return (
@@ -30,8 +42,8 @@ const Key = ({ def, isNext, needsShift }: { def: KeyDef; isNext: boolean; needsS
       </div>
     )
   }
-  const baseJamo = jamoForKey(def, false)
-  const shiftJamo = jamoForKey(def, true)
+  const baseJamo = showJamo ? jamoForKey(def, false) : null
+  const shiftJamo = showJamo ? jamoForKey(def, true) : null
   return (
     <div className={`key${isNext ? ' next' : ''}`} data-finger={def.finger}>
       <span className="ascii">{def.base.toUpperCase()}</span>
@@ -44,9 +56,10 @@ const Key = ({ def, isNext, needsShift }: { def: KeyDef; isNext: boolean; needsS
   )
 }
 
-export const Keyboard = ({ nextKeyChar }: Props) => {
+export const Keyboard = ({ nextKeyChar, lang = 'ko' }: Props) => {
   const nextKeyDef = nextKeyChar ? findKeyByChar(nextKeyChar) : null
   const needsShift = nextKeyChar ? nextKeyChar >= 'A' && nextKeyChar <= 'Z' : false
+  const showJamo = lang === 'ko'
 
   return (
     <div className="keyboard">
@@ -58,6 +71,7 @@ export const Keyboard = ({ nextKeyChar }: Props) => {
               def={k}
               isNext={nextKeyDef?.code === k.code}
               needsShift={needsShift}
+              showJamo={showJamo}
             />
           ))}
         </div>
