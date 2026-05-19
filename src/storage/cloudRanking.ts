@@ -5,6 +5,7 @@ import {
   limit,
   orderBy,
   query,
+  where,
 } from 'firebase/firestore/lite'
 import { db } from '../firebase'
 import { langOfSource, type Lang } from '../lessons/sources'
@@ -27,6 +28,7 @@ export const pushRecord = async (
   try {
     await addDoc(collection(db, RECORDS), {
       ...record,
+      lang: record.lang ?? langOfSource(record.source),
       at: Date.now(),
     })
   } catch (err) {
@@ -34,13 +36,10 @@ export const pushRecord = async (
   }
 }
 
-const cloudLang = (r: CloudRecord): Lang => r.lang ?? langOfSource(r.source)
-
-// We fetch a larger window (top 50 by cpm) and filter client-side by lang.
-// This avoids needing a composite Firestore index, at the cost of a slightly
-// larger payload. Lang populations are small enough that 50 is plenty.
-const CLOUD_FETCH_WINDOW = 50
-
+// Server-side lang filter ensures English records aren't crowded out by
+// Korean ones (Korean cpm counts jamo strokes and tends to be numerically
+// higher). Requires a Firestore composite index on (lang asc, cpm desc);
+// the first failed query will print an auto-create link in the console.
 export const fetchTopRecords = async (
   lang: Lang,
   n = 10
@@ -48,14 +47,12 @@ export const fetchTopRecords = async (
   try {
     const q = query(
       collection(db, RECORDS),
+      where('lang', '==', lang),
       orderBy('cpm', 'desc'),
-      limit(CLOUD_FETCH_WINDOW)
+      limit(n)
     )
     const snap = await getDocs(q)
-    return snap.docs
-      .map((d) => d.data() as CloudRecord)
-      .filter((r) => cloudLang(r) === lang)
-      .slice(0, n)
+    return snap.docs.map((d) => d.data() as CloudRecord)
   } catch (err) {
     console.warn('cloudRanking: fetch top failed', err)
     return []
@@ -69,16 +66,17 @@ export const fetchTodayTopRecords = async (
   try {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
+    const todayMs = today.getTime()
     const q = query(
       collection(db, RECORDS),
+      where('lang', '==', lang),
       orderBy('cpm', 'desc'),
-      limit(CLOUD_FETCH_WINDOW)
+      limit(50)
     )
     const snap = await getDocs(q)
-    const todayMs = today.getTime()
     return snap.docs
       .map((d) => d.data() as CloudRecord)
-      .filter((r) => cloudLang(r) === lang && r.at >= todayMs)
+      .filter((r) => r.at >= todayMs)
       .slice(0, n)
   } catch (err) {
     console.warn('cloudRanking: fetch today failed', err)

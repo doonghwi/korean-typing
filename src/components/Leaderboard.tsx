@@ -41,7 +41,7 @@ const Row = ({
 }
 
 export const Leaderboard = ({ userName, lang, refreshKey }: Props) => {
-  const [mode, setMode] = useState<Mode>('all')
+  const [mode, setMode] = useState<Mode>('today')
   const [allRecords, setAllRecords] = useState<CloudRecord[] | null>(null)
   const [todayRecords, setTodayRecords] = useState<CloudRecord[] | null>(null)
   const [loading, setLoading] = useState(true)
@@ -71,16 +71,16 @@ export const Leaderboard = ({ userName, lang, refreshKey }: Props) => {
         <h3>🏆 랭킹 ({unitLabel})</h3>
         <div className="lb-tabs">
           <button
-            className={mode === 'all' ? 'active' : ''}
-            onClick={() => setMode('all')}
-          >
-            역대
-          </button>
-          <button
             className={mode === 'today' ? 'active' : ''}
             onClick={() => setMode('today')}
           >
             오늘
+          </button>
+          <button
+            className={mode === 'all' ? 'active' : ''}
+            onClick={() => setMode('all')}
+          >
+            역대
           </button>
         </div>
       </div>
