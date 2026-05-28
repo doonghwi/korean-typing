@@ -61,8 +61,8 @@
 .streak-banner {
   --flame: #ff8a3d;
   display: flex;
-  align-items: center;
-  gap: 0.85rem;
+  flex-direction: column;
+  gap: 0.7rem;
   padding: 0.85rem 1rem;
   border-radius: 0.85rem;
   border: 1px solid color-mix(in oklab, var(--flame) 35%, var(--border));
@@ -71,6 +71,46 @@
     color-mix(in oklab, var(--flame) 16%, var(--surface)),
     var(--surface)
   );
+}
+
+.streak-main {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.daily-goal {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.daily-goal .dg-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.daily-goal.met .dg-label {
+  color: var(--correct);
+}
+
+.dg-bar {
+  height: 0.45rem;
+  border-radius: 1rem;
+  background: color-mix(in oklab, var(--border) 70%, transparent);
+  overflow: hidden;
+}
+
+.dg-fill {
+  height: 100%;
+  border-radius: 1rem;
+  background: var(--flame);
+  transition: width 300ms ease;
+}
+
+.daily-goal.met .dg-fill {
+  background: var(--correct);
 }
 
 .streak-banner.start {

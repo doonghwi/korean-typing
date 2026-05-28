@@ -16,6 +16,7 @@ const expectedToKeyChar = (expected: string | null): string | null => {
 interface Props {
   title?: string
   lines: string[]
+  bestCpm?: number
   onLineComplete?: (result: {
     cpm: number
     accuracy: number
@@ -35,9 +36,14 @@ interface LineResult {
 
 type CharStatus = 'pending' | 'current' | 'correct' | 'wrong'
 
+// Lines shorter than this don't qualify for a "new record" — short lines spike
+// CPM and would trigger false celebrations.
+const MIN_PB_CHARS = 8
+
 export const TypingScreen = ({
   title,
   lines,
+  bestCpm = 0,
   onLineComplete,
   onFinishAll,
   onExit,
@@ -52,12 +58,15 @@ export const TypingScreen = ({
   const onLineCompleteRef = useRef(onLineComplete)
   onLineCompleteRef.current = onLineComplete
   const advanceRef = useRef<() => void>(() => {})
+  // Highest CPM already achieved (prior best at start, then session highs).
+  const beatenBestRef = useRef(bestCpm)
 
   useEffect(() => {
     setLineIdx(0)
     setLineResults([])
     setAllDone(false)
-  }, [lines])
+    beatenBestRef.current = bestCpm
+  }, [lines, bestCpm])
 
   useEffect(() => {
     if (state.finishedAt) return
@@ -83,6 +92,7 @@ export const TypingScreen = ({
         text: currentLine,
       })
     }
+    beatenBestRef.current = Math.max(beatenBestRef.current, derived.charsPerMinute)
     if (lineIdx < lines.length - 1) {
       setLineIdx((idx) => idx + 1)
     }
@@ -127,6 +137,13 @@ export const TypingScreen = ({
   const isLastLine = lineIdx === lines.length - 1
   const prevLine = lineIdx > 0 ? lines[lineIdx - 1] : null
   const nextLine = lineIdx < lines.length - 1 ? lines[lineIdx + 1] : null
+
+  const isNewRecord =
+    !!state.finishedAt &&
+    state.errorCount === 0 &&
+    currentLine.length >= MIN_PB_CHARS &&
+    beatenBestRef.current > 0 &&
+    derived.charsPerMinute > beatenBestRef.current
 
   const charStatus = (charIdx: number): CharStatus => {
     const start = charIdx === 0 ? 0 : derived.boundaries[charIdx - 1]
@@ -208,6 +225,9 @@ export const TypingScreen = ({
           </div>
           {state.finishedAt ? (
             <div className="line-finished">
+              {isNewRecord ? (
+                <span className="record-badge">🎉 신기록!</span>
+              ) : null}
               ✓ {Math.round(derived.charsPerMinute)} CPM ·{' '}
               {Math.round(derived.accuracy * 100)}%
               {isLastLine ? (

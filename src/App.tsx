@@ -12,6 +12,7 @@ import {
 } from './lessons/sources'
 import {
   clearCurrentUser,
+  getAllTimeBest,
   getCurrentUser,
   getUserLang,
   recordLine,
@@ -78,6 +79,13 @@ function App() {
     return shuffle(linesForSource(sessionSource))
   }, [sessionKey, sessionSource])
 
+  // Personal-best baseline frozen at session start, so beating it mid-session
+  // doesn't immediately stop the "new record" celebration.
+  const sessionBestCpm = useMemo(() => {
+    if (!user || !sessionSource) return 0
+    return getAllTimeBest(user, sessionLang)?.cpm ?? 0
+  }, [sessionKey, user, sessionSource, sessionLang])
+
   return (
     <main className="app">
       <header className="hero">
@@ -111,6 +119,7 @@ function App() {
               key={view.sessionKey}
               title={sourceLabel(sessionSource)}
               lines={shuffledLines}
+              bestCpm={sessionBestCpm}
               onLineComplete={onLineComplete}
               onExit={goToProfile}
             />
@@ -119,6 +128,7 @@ function App() {
               key={view.sessionKey}
               title={sourceLabel(sessionSource)}
               lines={shuffledLines}
+              bestCpm={sessionBestCpm}
               onLineComplete={onLineComplete}
               onExit={goToProfile}
             />

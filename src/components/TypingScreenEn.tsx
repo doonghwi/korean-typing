@@ -9,6 +9,7 @@ import './TypingScreen.css'
 interface Props {
   title?: string
   lines: string[]
+  bestCpm?: number
   onLineComplete?: (result: {
     cpm: number
     wpm: number
@@ -30,9 +31,14 @@ interface LineResult {
 
 type CharStatus = 'pending' | 'current' | 'correct' | 'wrong'
 
+// Lines shorter than this don't qualify for a "new record" — short lines spike
+// CPM and would trigger false celebrations.
+const MIN_PB_CHARS = 8
+
 export const TypingScreenEn = ({
   title,
   lines,
+  bestCpm = 0,
   onLineComplete,
   onFinishAll,
   onExit,
@@ -47,12 +53,14 @@ export const TypingScreenEn = ({
   const onLineCompleteRef = useRef(onLineComplete)
   onLineCompleteRef.current = onLineComplete
   const advanceRef = useRef<() => void>(() => {})
+  const beatenBestRef = useRef(bestCpm)
 
   useEffect(() => {
     setLineIdx(0)
     setLineResults([])
     setAllDone(false)
-  }, [lines])
+    beatenBestRef.current = bestCpm
+  }, [lines, bestCpm])
 
   useEffect(() => {
     if (state.finishedAt) return
@@ -80,6 +88,7 @@ export const TypingScreenEn = ({
         text: currentLine,
       })
     }
+    beatenBestRef.current = Math.max(beatenBestRef.current, derived.charsPerMinute)
     if (lineIdx < lines.length - 1) {
       setLineIdx((idx) => idx + 1)
     }
@@ -124,6 +133,13 @@ export const TypingScreenEn = ({
   const isLastLine = lineIdx === lines.length - 1
   const prevLine = lineIdx > 0 ? lines[lineIdx - 1] : null
   const nextLine = lineIdx < lines.length - 1 ? lines[lineIdx + 1] : null
+
+  const isNewRecord =
+    !!state.finishedAt &&
+    state.errorCount === 0 &&
+    currentLine.length >= MIN_PB_CHARS &&
+    beatenBestRef.current > 0 &&
+    derived.charsPerMinute > beatenBestRef.current
 
   const charStatus = (i: number): CharStatus => {
     if (state.inputCount < i) return 'pending'
@@ -203,6 +219,9 @@ export const TypingScreenEn = ({
           </div>
           {state.finishedAt ? (
             <div className="line-finished">
+              {isNewRecord ? (
+                <span className="record-badge">🎉 신기록!</span>
+              ) : null}
               ✓ {Math.round(derived.wordsPerMinute)} WPM ·{' '}
               {Math.round(derived.accuracy * 100)}%
               {isLastLine ? (

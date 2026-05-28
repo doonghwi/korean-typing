@@ -202,27 +202,45 @@ const streakHeadline = (
   }
 }
 
-const StreakBanner = ({ userName }: { userName: string }) => {
+const DAILY_GOAL = 10
+
+const StreakBanner = ({ userName, lang }: { userName: string; lang: Lang }) => {
   // Recompute per user; a fresh component mount (each profile entry) re-rolls
   // the encouraging line so it varies every time the user lands here.
   const streak = useMemo(() => getStreak(userName), [userName])
   const head = useMemo(() => streakHeadline(streak), [streak])
 
+  const todayCount = getTodayCount(userName, lang)
+  const goalMet = todayCount >= DAILY_GOAL
+  const pct = Math.min(100, Math.round((todayCount / DAILY_GOAL) * 100))
+
   return (
     <div className={`streak-banner ${streakState(streak)}`}>
-      <span className="streak-flame" aria-hidden>
-        {head.emoji}
-      </span>
-      <div className="streak-text">
-        <div className="streak-title">{head.title}</div>
-        <div className="streak-sub">{head.sub}</div>
-      </div>
-      {streak.current > 0 ? (
-        <div className="streak-count">
-          <span className="streak-num">{streak.current}</span>
-          <span className="streak-unit">일</span>
+      <div className="streak-main">
+        <span className="streak-flame" aria-hidden>
+          {head.emoji}
+        </span>
+        <div className="streak-text">
+          <div className="streak-title">{head.title}</div>
+          <div className="streak-sub">{head.sub}</div>
         </div>
-      ) : null}
+        {streak.current > 0 ? (
+          <div className="streak-count">
+            <span className="streak-num">{streak.current}</span>
+            <span className="streak-unit">일</span>
+          </div>
+        ) : null}
+      </div>
+      <div className={`daily-goal${goalMet ? ' met' : ''}`}>
+        <div className="dg-label">
+          {goalMet
+            ? '오늘 목표 달성! 🎉'
+            : `오늘 목표 ${Math.min(todayCount, DAILY_GOAL)}/${DAILY_GOAL} 줄`}
+        </div>
+        <div className="dg-bar">
+          <div className="dg-fill" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
     </div>
   )
 }
@@ -283,7 +301,7 @@ export const Profile = ({
         </button>
       </div>
 
-      <StreakBanner userName={userName} />
+      <StreakBanner userName={userName} lang={lang} />
 
       <LangToggle lang={lang} onChange={onLangChange} />
 
