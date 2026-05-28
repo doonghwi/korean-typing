@@ -12,6 +12,7 @@ import { langOfSource, type Lang } from '../lessons/sources'
 
 const RECORDS = 'records'
 const SPRINTS = 'sprints'
+const FALLINGS = 'fallings'
 
 export interface CloudRecord {
   user: string
@@ -96,6 +97,44 @@ export const fetchTopSprints = async (
     return snap.docs.map((d) => d.data() as CloudSprint)
   } catch (err) {
     console.warn('cloudRanking: fetch sprints failed', err)
+    return []
+  }
+}
+
+export interface CloudFalling {
+  user: string
+  lang: Lang
+  score: number
+  at: number
+}
+
+// Cloud falling-game leaderboard. Needs Firestore rules for the `fallings`
+// collection + composite index on (lang asc, score desc).
+export const pushFalling = async (
+  record: Omit<CloudFalling, 'at'>
+): Promise<void> => {
+  try {
+    await addDoc(collection(db, FALLINGS), { ...record, at: Date.now() })
+  } catch (err) {
+    console.warn('cloudRanking: falling push failed', err)
+  }
+}
+
+export const fetchTopFallings = async (
+  lang: Lang,
+  n = 10
+): Promise<CloudFalling[]> => {
+  try {
+    const q = query(
+      collection(db, FALLINGS),
+      where('lang', '==', lang),
+      orderBy('score', 'desc'),
+      limit(n)
+    )
+    const snap = await getDocs(q)
+    return snap.docs.map((d) => d.data() as CloudFalling)
+  } catch (err) {
+    console.warn('cloudRanking: fetch fallings failed', err)
     return []
   }
 }

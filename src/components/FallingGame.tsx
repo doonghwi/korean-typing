@@ -9,6 +9,7 @@ import {
   type ComposerState,
 } from '../hangul'
 import { codeToKeyChar } from '../hangul/dubeolsik'
+import { fetchTopFallings, type CloudFalling } from '../storage/cloudRanking'
 import type { Lang } from '../lessons/sources'
 import './FallingGame.css'
 
@@ -25,9 +26,47 @@ interface FallingWord {
 interface Props {
   lang: Lang
   pool: string[]
+  userName: string
   bestScore: number
   onComplete: (score: number) => void
   onExit: () => void
+}
+
+const FallingLeaderboard = ({
+  lang,
+  userName,
+}: {
+  lang: Lang
+  userName: string
+}) => {
+  const [rows, setRows] = useState<CloudFalling[] | null>(null)
+  useEffect(() => {
+    let alive = true
+    fetchTopFallings(lang, 5).then((r) => {
+      if (alive) setRows(r)
+    })
+    return () => {
+      alive = false
+    }
+  }, [lang])
+
+  if (rows === null) return <p className="fg-lb-empty">랭킹 불러오는 중…</p>
+  if (rows.length === 0) return null
+
+  return (
+    <ol className="fg-lb">
+      {rows.map((r, i) => (
+        <li
+          key={`${r.user}-${r.at}-${i}`}
+          className={`fg-lb-row${r.user === userName ? ' me' : ''}`}
+        >
+          <span className="fg-lb-rank">{i + 1}</span>
+          <span className="fg-lb-user">{r.user}</span>
+          <span className="fg-lb-score">{r.score}</span>
+        </li>
+      ))}
+    </ol>
+  )
 }
 
 // Difficulty scales with score: words fall faster and spawn more often.
@@ -35,7 +74,14 @@ const fallDurationFor = (score: number) => Math.max(2.6, 6 - Math.floor(score / 
 const spawnIntervalFor = (score: number) =>
   Math.max(900, 2000 - Math.floor(score / 5) * 120)
 
-export const FallingGame = ({ lang, pool, bestScore, onComplete, onExit }: Props) => {
+export const FallingGame = ({
+  lang,
+  pool,
+  userName,
+  bestScore,
+  onComplete,
+  onExit,
+}: Props) => {
   const [words, setWords] = useState<FallingWord[]>([])
   const [score, setScore] = useState(0)
   const [lives, setLives] = useState(MAX_LIVES)
@@ -225,6 +271,7 @@ export const FallingGame = ({ lang, pool, bestScore, onComplete, onExit }: Props
           <span className="fg-score-unit">개</span>
         </div>
         <div className="fg-sub">최고 기록 {Math.max(bestScore, score)}개</div>
+        <FallingLeaderboard lang={lang} userName={userName} />
         <div className="actions">
           <button onClick={restart}>다시</button>
           <button className="primary" onClick={onExit}>

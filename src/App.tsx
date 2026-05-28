@@ -32,7 +32,7 @@ import {
   recordSprint,
   setUserLang,
 } from './storage/progress'
-import { pushSprint } from './storage/cloudRanking'
+import { pushFalling, pushSprint } from './storage/cloudRanking'
 import { shuffle } from './utils/shuffle'
 import './App.css'
 
@@ -183,6 +183,7 @@ function App() {
     (score: number) => {
       if (!user || view.kind !== 'falling') return
       recordFalling(user, view.lang, score)
+      void pushFalling({ user, lang: view.lang, score })
     },
     [user, view]
   )
@@ -239,6 +240,7 @@ function App() {
             key={view.sessionKey}
             lang={view.lang}
             pool={fallingPool}
+            userName={user ?? ''}
             bestScore={fallingBest}
             onComplete={onFallingComplete}
             onExit={goToProfile}
