@@ -515,6 +515,85 @@
   font-weight: 700;
 }
 
+.achievements {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.85rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.ach-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.ach-header h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.ach-count {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.ach-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.2rem, 1fr));
+  gap: 0.5rem;
+}
+
+.ach-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.55rem 0.3rem;
+  border-radius: 0.55rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  text-align: center;
+}
+
+.ach-badge.earned {
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--border));
+  background: color-mix(in oklab, var(--accent) 12%, var(--surface));
+}
+
+.ach-emoji {
+  font-size: 1.5rem;
+  line-height: 1;
+  filter: grayscale(1);
+  opacity: 0.4;
+}
+
+.ach-badge.earned .ach-emoji {
+  filter: none;
+  opacity: 1;
+}
+
+.ach-title {
+  font-size: 0.66rem;
+  color: var(--muted);
+  line-height: 1.2;
+}
+
+.ach-badge.earned .ach-title {
+  color: var(--text);
+  font-weight: 600;
+}
+
 .recent h3 {
   margin: 0 0 0.5rem;
   font-size: 0.9rem;

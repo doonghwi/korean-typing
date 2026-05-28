@@ -22,6 +22,7 @@ import {
   WORD_OPTIONS_EN,
   type Lang,
 } from '../lessons/sources'
+import { getAchievements } from '../storage/achievements'
 import { jamoToKey } from '../hangul/dubeolsik'
 import { Leaderboard } from './Leaderboard'
 import './Profile.css'
@@ -292,6 +293,33 @@ const WeakKeys = ({
   )
 }
 
+const Achievements = ({ userName }: { userName: string }) => {
+  const items = useMemo(() => getAchievements(userName), [userName])
+  const earned = items.filter((i) => i.earned).length
+  return (
+    <section className="achievements">
+      <div className="ach-header">
+        <h3>업적</h3>
+        <span className="ach-count">
+          {earned}/{items.length}
+        </span>
+      </div>
+      <ul className="ach-grid">
+        {items.map((a) => (
+          <li
+            key={a.id}
+            className={`ach-badge${a.earned ? ' earned' : ''}`}
+            title={a.desc}
+          >
+            <span className="ach-emoji">{a.emoji}</span>
+            <span className="ach-title">{a.title}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 export const Profile = ({
   userName,
   lang,
@@ -443,6 +471,8 @@ export const Profile = ({
           <span className="sc-go">→</span>
         </button>
       </div>
+
+      <Achievements userName={userName} />
 
       <Leaderboard userName={userName} lang={lang} />
 
