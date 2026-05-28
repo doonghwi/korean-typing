@@ -2,9 +2,11 @@ import { useCallback, useMemo, useState } from 'react'
 import { TypingScreen } from './components/TypingScreen'
 import { TypingScreenEn } from './components/TypingScreenEn'
 import { SprintScreen } from './components/SprintScreen'
+import { FallingGame } from './components/FallingGame'
 import { UserPicker } from './components/UserPicker'
 import { Profile } from './components/Profile'
 import {
+  buildFallingPool,
   buildSprintPool,
   buildWeakPracticeLines,
   isValidSource,
@@ -18,11 +20,13 @@ import {
 import {
   clearCurrentUser,
   getAllTimeBest,
+  getBestFalling,
   getBestSprint,
   getCurrentUser,
   getTodayBest,
   getUserLang,
   getWeakKeys,
+  recordFalling,
   recordKeyStats,
   recordLine,
   recordSprint,
@@ -43,6 +47,7 @@ type View =
       weakKeys?: string[]
     }
   | { kind: 'sprint'; lang: Lang; sessionKey: number }
+  | { kind: 'falling'; lang: Lang; sessionKey: number }
 
 function App() {
   const initialUser = getCurrentUser()
@@ -74,6 +79,10 @@ function App() {
 
   const startSprint = useCallback(() => {
     setView({ kind: 'sprint', lang, sessionKey: Date.now() })
+  }, [lang])
+
+  const startFalling = useCallback(() => {
+    setView({ kind: 'falling', lang, sessionKey: Date.now() })
   }, [lang])
 
   const startWeakPractice = useCallback(() => {
@@ -161,6 +170,23 @@ function App() {
     [user, view]
   )
 
+  const fallingKey = view.kind === 'falling' ? view.sessionKey : null
+  const fallingLang = view.kind === 'falling' ? view.lang : lang
+  const fallingPool = useMemo(
+    () => (fallingKey === null ? [] : buildFallingPool(fallingLang)),
+    [fallingKey, fallingLang]
+  )
+  const fallingBest =
+    user && view.kind === 'falling' ? getBestFalling(user, view.lang) : 0
+
+  const onFallingComplete = useCallback(
+    (score: number) => {
+      if (!user || view.kind !== 'falling') return
+      recordFalling(user, view.lang, score)
+    },
+    [user, view]
+  )
+
   return (
     <main className="app">
       <header className="hero">
@@ -182,6 +208,7 @@ function App() {
           onStart={startSession}
           onStartWeak={startWeakPractice}
           onStartSprint={startSprint}
+          onStartFalling={startFalling}
           onSwitchUser={switchUser}
         />
       ) : view.kind === 'sprint' ? (
@@ -198,6 +225,22 @@ function App() {
             userName={user ?? ''}
             bestSprint={sprintBest}
             onComplete={onSprintComplete}
+            onExit={goToProfile}
+          />
+        </>
+      ) : view.kind === 'falling' ? (
+        <>
+          <div className="back-row">
+            <button className="back-btn" onClick={goToProfile}>
+              ← 프로필
+            </button>
+          </div>
+          <FallingGame
+            key={view.sessionKey}
+            lang={view.lang}
+            pool={fallingPool}
+            bestScore={fallingBest}
+            onComplete={onFallingComplete}
             onExit={goToProfile}
           />
         </>

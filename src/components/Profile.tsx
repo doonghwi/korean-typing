@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import {
   getAllTimeBest,
+  getBestFalling,
   getBestSprint,
   getRecentRecords,
   getStreak,
@@ -32,6 +33,7 @@ interface Props {
   onStart: (source: string) => void
   onStartWeak: () => void
   onStartSprint: () => void
+  onStartFalling: () => void
   onSwitchUser: () => void
 }
 
@@ -297,6 +299,7 @@ export const Profile = ({
   onStart,
   onStartWeak,
   onStartSprint,
+  onStartFalling,
   onSwitchUser,
 }: Props) => {
   const positionOptions = lang === 'en' ? POSITION_OPTIONS_EN : POSITION_OPTIONS
@@ -328,6 +331,7 @@ export const Profile = ({
   const recent = getRecentRecords(userName, 6, lang)
   const todayCount = getTodayCount(userName, lang)
   const bestSprint = getBestSprint(userName, lang)
+  const bestFalling = getBestFalling(userName, lang)
 
   const isEn = lang === 'en'
   const unit = isEn ? 'WPM' : 'CPM'
@@ -412,18 +416,33 @@ export const Profile = ({
         </PracticeSection>
       </div>
 
-      <button className="sprint-cta" onClick={onStartSprint}>
-        <span className="sc-emoji">⏱️</span>
-        <span className="sc-text">
-          <b>1분 스프린트</b>
-          <small>
-            {bestSprint
-              ? `내 최고 ${isEn ? Math.round(bestSprint.correct / 5) : bestSprint.correct}${isEn ? ' 단어' : '타'} · 다시 도전!`
-              : '1분 동안 최대한 많이 — 줄은 자동으로 넘어가요'}
-          </small>
-        </span>
-        <span className="sc-go">→</span>
-      </button>
+      <div className="game-ctas">
+        <button className="sprint-cta" onClick={onStartSprint}>
+          <span className="sc-emoji">⏱️</span>
+          <span className="sc-text">
+            <b>1분 스프린트</b>
+            <small>
+              {bestSprint
+                ? `내 최고 ${isEn ? Math.round(bestSprint.correct / 5) : bestSprint.correct}${isEn ? ' 단어' : '타'}`
+                : '1분 동안 최대한 많이'}
+            </small>
+          </span>
+          <span className="sc-go">→</span>
+        </button>
+
+        <button className="sprint-cta falling" onClick={onStartFalling}>
+          <span className="sc-emoji">🌧️</span>
+          <span className="sc-text">
+            <b>낙하 게임</b>
+            <small>
+              {bestFalling > 0
+                ? `내 최고 ${bestFalling}개 · 바닥 전에 입력!`
+                : '떨어지는 단어를 바닥 전에 입력!'}
+            </small>
+          </span>
+          <span className="sc-go">→</span>
+        </button>
+      </div>
 
       <Leaderboard userName={userName} lang={lang} />
 

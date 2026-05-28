@@ -170,6 +170,13 @@ export const buildSprintPool = (lang: Lang): string[] =>
     ? [...wordsAtLevelEn(MAX_WORD_LEVEL_EN), ...shortLinesEn()]
     : [...wordsAtLevel(MAX_WORD_LEVEL), ...shortLines()]
 
+// Short single words for the falling game (no spaces, quick to clear).
+export const buildFallingPool = (lang: Lang): string[] =>
+  (lang === 'en'
+    ? wordsAtLevelEn(MAX_WORD_LEVEL_EN)
+    : wordsAtLevel(MAX_WORD_LEVEL)
+  ).filter((w) => !w.includes(' ') && w.length >= 2 && w.length <= (lang === 'en' ? 7 : 4))
+
 // ----- Weak-key custom practice -----
 
 export const WEAK_SOURCE = 'weak'

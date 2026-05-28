@@ -305,3 +305,15 @@ export const getRecentSprints = (
     .filter((s) => s.lang === lang)
     .slice(-n)
     .reverse()
+
+// ----- Falling game best score (local) -----
+
+const fallingKey = (name: string, lang: Lang) => `taza:user:${name}:falling:${lang}`
+
+export const recordFalling = (name: string, lang: Lang, score: number): void => {
+  const best = readJson<number>(fallingKey(name, lang)) ?? 0
+  if (score > best) writeJson(fallingKey(name, lang), score)
+}
+
+export const getBestFalling = (name: string, lang: Lang): number =>
+  readJson<number>(fallingKey(name, lang)) ?? 0

@@ -438,6 +438,12 @@
   background: color-mix(in oklab, var(--accent) 85%, black);
 }
 
+.game-ctas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.6rem;
+}
+
 .sprint-cta {
   display: flex;
   align-items: center;
@@ -454,8 +460,27 @@
   transition: background 120ms, transform 80ms;
 }
 
+.sprint-cta.falling {
+  border-color: color-mix(in oklab, #a78bfa 45%, var(--border));
+  background: color-mix(in oklab, #a78bfa 12%, var(--surface));
+}
+
+.sprint-cta.falling:hover {
+  background: color-mix(in oklab, #a78bfa 20%, var(--surface));
+}
+
+.sprint-cta.falling .sc-go {
+  color: #a78bfa;
+}
+
 .sprint-cta:hover {
   background: color-mix(in oklab, var(--accent) 20%, var(--surface));
+}
+
+@media (max-width: 480px) {
+  .game-ctas {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .sprint-cta:active {
