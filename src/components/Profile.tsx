@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   getAllTimeBest,
   getRecentRecords,
+  getStreak,
   getTodayBest,
   getTodayCount,
   type BestRecord,
   type LineRecord,
+  type StreakInfo,
 } from '../storage/progress'
 import {
   POSITION_OPTIONS,
@@ -152,6 +154,79 @@ const LangToggle = ({
   </div>
 )
 
+const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
+
+type StreakState = 'start' | 'alive' | 'active'
+
+const streakState = (s: StreakInfo): StreakState => {
+  if (s.current === 0) return 'start'
+  return s.activeToday ? 'active' : 'alive'
+}
+
+const streakHeadline = (
+  s: StreakInfo
+): { emoji: string; title: string; sub: string } => {
+  switch (streakState(s)) {
+    case 'active':
+      return {
+        emoji: '🔥',
+        title: `${s.current}일 연속 달성!`,
+        sub: pick([
+          '오늘도 해냈어요. 내일도 이어가요!',
+          '꾸준함이 곧 실력이 됩니다.',
+          s.current >= s.best
+            ? '역대 최장 기록을 갱신하는 중이에요!'
+            : `최장 기록은 ${s.best}일 — 곧 따라잡겠는데요?`,
+        ]),
+      }
+    case 'alive':
+      return {
+        emoji: '⚡',
+        title: `${s.current}일 연속 진행 중`,
+        sub: pick([
+          '오늘 한 줄이면 streak이 이어져요!',
+          `여기서 멈추면 아까워요. ${s.current + 1}일째로 가요!`,
+          '딱 한 줄만 쳐도 오늘이 안전합니다.',
+        ]),
+      }
+    default:
+      return {
+        emoji: '🌱',
+        title: '오늘부터 연속 기록 시작!',
+        sub: pick([
+          '한 줄만 쳐도 오늘이 카운트돼요.',
+          '작은 한 걸음이 streak의 시작이에요.',
+          '지금 한 줄이 내일의 2일 연속을 만들어요.',
+        ]),
+      }
+  }
+}
+
+const StreakBanner = ({ userName }: { userName: string }) => {
+  // Recompute per user; a fresh component mount (each profile entry) re-rolls
+  // the encouraging line so it varies every time the user lands here.
+  const streak = useMemo(() => getStreak(userName), [userName])
+  const head = useMemo(() => streakHeadline(streak), [streak])
+
+  return (
+    <div className={`streak-banner ${streakState(streak)}`}>
+      <span className="streak-flame" aria-hidden>
+        {head.emoji}
+      </span>
+      <div className="streak-text">
+        <div className="streak-title">{head.title}</div>
+        <div className="streak-sub">{head.sub}</div>
+      </div>
+      {streak.current > 0 ? (
+        <div className="streak-count">
+          <span className="streak-num">{streak.current}</span>
+          <span className="streak-unit">일</span>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 export const Profile = ({
   userName,
   lang,
@@ -207,6 +282,8 @@ export const Profile = ({
           다른 사용자
         </button>
       </div>
+
+      <StreakBanner userName={userName} />
 
       <LangToggle lang={lang} onChange={onLangChange} />
 

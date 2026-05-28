@@ -165,3 +165,52 @@ export const getTodayCount = (name: string, lang: Lang): number => {
     (r) => recordLang(r) === lang && r.at >= today
   ).length
 }
+
+export interface StreakInfo {
+  current: number
+  best: number
+  activeToday: boolean
+}
+
+const DAY_MS = 86_400_000
+
+// Local-day index. Korea has no DST so local-midnight / DAY_MS is exact.
+const dayNumber = (ms: number): number => {
+  const d = new Date(ms)
+  d.setHours(0, 0, 0, 0)
+  return Math.round(d.getTime() / DAY_MS)
+}
+
+// Streak is tied to the user name and counts any practice day across both
+// languages (recordLine stores a local record for every completed line).
+export const getStreak = (name: string): StreakInfo => {
+  const records = getProgress(name).records
+  if (records.length === 0) return { current: 0, best: 0, activeToday: false }
+
+  const days = new Set<number>()
+  for (const r of records) days.add(dayNumber(r.at))
+
+  const today = dayNumber(Date.now())
+  const activeToday = days.has(today)
+
+  // Count back from today, or from yesterday if today isn't done yet so the
+  // streak stays "alive" until midnight.
+  let current = 0
+  let cursor = activeToday ? today : today - 1
+  while (days.has(cursor)) {
+    current += 1
+    cursor -= 1
+  }
+
+  const sorted = [...days].sort((a, b) => a - b)
+  let best = 0
+  let run = 0
+  let prev: number | null = null
+  for (const d of sorted) {
+    run = prev !== null && d === prev + 1 ? run + 1 : 1
+    if (run > best) best = run
+    prev = d
+  }
+
+  return { current, best, activeToday }
+}
