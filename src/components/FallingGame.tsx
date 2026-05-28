@@ -18,7 +18,7 @@ const TICK_MS = 50
 interface FallingWord {
   id: number
   text: string
-  x: number // 0..100 (%)
+  x: number // left-edge offset in px (clamped to fit inside the field)
   y: number // 0..1 (0 top, 1 floor)
 }
 
@@ -52,6 +52,7 @@ export const FallingGame = ({ lang, pool, bestScore, onComplete, onExit }: Props
   const bufferRef = useRef('')
   const nextIdRef = useRef(1)
   const onCompleteRef = useRef(onComplete)
+  const fieldRef = useRef<HTMLDivElement>(null)
 
   wordsRef.current = words
   gameOverRef.current = gameOver
@@ -64,12 +65,16 @@ export const FallingGame = ({ lang, pool, bestScore, onComplete, onExit }: Props
       ? words.reduce((a, b) => (b.y > a.y ? b : a)).id
       : null
 
-  const makeWord = (): FallingWord => ({
-    id: nextIdRef.current++,
-    text: pool[Math.floor(Math.random() * pool.length)] ?? '',
-    x: 6 + Math.random() * 80,
-    y: 0,
-  })
+  // x is a left-edge offset in px, clamped so the whole word stays inside the
+  // field (English words are wide and otherwise clip against overflow:hidden).
+  const makeWord = (): FallingWord => {
+    const text = pool[Math.floor(Math.random() * pool.length)] ?? ''
+    const fieldW = fieldRef.current?.clientWidth ?? 600
+    const charPx = lang === 'en' ? 14 : 28
+    const wordPx = text.length * charPx + 30
+    const maxLeft = Math.max(0, fieldW - wordPx)
+    return { id: nextIdRef.current++, text, x: Math.random() * maxLeft, y: 0 }
+  }
 
   const clearTyping = () => {
     composerRef.current = initialState()
@@ -246,12 +251,12 @@ export const FallingGame = ({ lang, pool, bestScore, onComplete, onExit }: Props
         </div>
       </div>
 
-      <div className="fg-field">
+      <div className="fg-field" ref={fieldRef}>
         {words.map((w) => (
           <span
             key={w.id}
             className={`fg-word${w.id === lowestId ? ' active' : ''}`}
-            style={{ left: `${w.x}%`, top: `${w.y * 100}%` }}
+            style={{ left: `${w.x}px`, top: `${w.y * 100}%` }}
           >
             {w.text}
           </span>

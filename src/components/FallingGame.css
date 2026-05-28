@@ -58,7 +58,7 @@
 
 .fg-word {
   position: absolute;
-  transform: translate(-50%, -50%);
+  transform: translateY(-50%);
   font-size: 1.4rem;
   font-weight: 600;
   color: var(--text);
