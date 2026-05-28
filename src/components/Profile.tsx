@@ -30,6 +30,7 @@ interface Props {
   onLangChange: (lang: Lang) => void
   onStart: (source: string) => void
   onStartWeak: () => void
+  onStartSprint: () => void
   onSwitchUser: () => void
 }
 
@@ -294,6 +295,7 @@ export const Profile = ({
   onLangChange,
   onStart,
   onStartWeak,
+  onStartSprint,
   onSwitchUser,
 }: Props) => {
   const positionOptions = lang === 'en' ? POSITION_OPTIONS_EN : POSITION_OPTIONS
@@ -407,6 +409,15 @@ export const Profile = ({
           ))}
         </PracticeSection>
       </div>
+
+      <button className="sprint-cta" onClick={onStartSprint}>
+        <span className="sc-emoji">⏱️</span>
+        <span className="sc-text">
+          <b>1분 스프린트</b>
+          <small>1분 동안 최대한 많이 — 줄은 자동으로 넘어가요</small>
+        </span>
+        <span className="sc-go">→</span>
+      </button>
 
       <Leaderboard userName={userName} lang={lang} />
 

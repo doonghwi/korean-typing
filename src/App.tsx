@@ -1,9 +1,11 @@
 import { useCallback, useMemo, useState } from 'react'
 import { TypingScreen } from './components/TypingScreen'
 import { TypingScreenEn } from './components/TypingScreenEn'
+import { SprintScreen } from './components/SprintScreen'
 import { UserPicker } from './components/UserPicker'
 import { Profile } from './components/Profile'
 import {
+  buildSprintPool,
   buildWeakPracticeLines,
   isValidSource,
   langOfSource,
@@ -36,6 +38,7 @@ type View =
       customLines?: string[]
       weakKeys?: string[]
     }
+  | { kind: 'sprint'; lang: Lang; sessionKey: number }
 
 function App() {
   const initialUser = getCurrentUser()
@@ -64,6 +67,10 @@ function App() {
   const startSession = useCallback((source: string) => {
     setView({ kind: 'session', source, sessionKey: Date.now() })
   }, [])
+
+  const startSprint = useCallback(() => {
+    setView({ kind: 'sprint', lang, sessionKey: Date.now() })
+  }, [lang])
 
   const startWeakPractice = useCallback(() => {
     if (!user) return
@@ -125,6 +132,13 @@ function App() {
     return getAllTimeBest(user, sessionLang)?.cpm ?? 0
   }, [sessionKey, user, sessionSource, sessionLang])
 
+  const sprintKey = view.kind === 'sprint' ? view.sessionKey : null
+  const sprintLang = view.kind === 'sprint' ? view.lang : lang
+  const sprintLines = useMemo(
+    () => (sprintKey === null ? [] : shuffle(buildSprintPool(sprintLang))),
+    [sprintKey, sprintLang]
+  )
+
   return (
     <main className="app">
       <header className="hero">
@@ -145,8 +159,23 @@ function App() {
           onLangChange={changeLang}
           onStart={startSession}
           onStartWeak={startWeakPractice}
+          onStartSprint={startSprint}
           onSwitchUser={switchUser}
         />
+      ) : view.kind === 'sprint' ? (
+        <>
+          <div className="back-row">
+            <button className="back-btn" onClick={goToProfile}>
+              ← 프로필
+            </button>
+          </div>
+          <SprintScreen
+            key={view.sessionKey}
+            lang={view.lang}
+            lines={sprintLines}
+            onExit={goToProfile}
+          />
+        </>
       ) : view.kind === 'session' &&
         sessionSource &&
         ((sessionCustomLines && sessionCustomLines.length > 0) ||

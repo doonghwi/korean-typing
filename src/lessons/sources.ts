@@ -162,6 +162,14 @@ export const isRecordRankingEligible = (
   accuracy: number
 ): boolean => isRankableSource(source, text) && accuracy >= 1
 
+// ----- Sprint game pool -----
+
+// A broad shuffle-able pool (words + short sentences) for the 1-minute sprint.
+export const buildSprintPool = (lang: Lang): string[] =>
+  lang === 'en'
+    ? [...wordsAtLevelEn(MAX_WORD_LEVEL_EN), ...shortLinesEn()]
+    : [...wordsAtLevel(MAX_WORD_LEVEL), ...shortLines()]
+
 // ----- Weak-key custom practice -----
 
 export const WEAK_SOURCE = 'weak'

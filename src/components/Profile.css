@@ -438,6 +438,58 @@
   background: color-mix(in oklab, var(--accent) 85%, black);
 }
 
+.sprint-cta {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in oklab, var(--accent) 40%, var(--border));
+  background: color-mix(in oklab, var(--accent) 12%, var(--surface));
+  color: var(--text);
+  font-family: inherit;
+  transition: background 120ms, transform 80ms;
+}
+
+.sprint-cta:hover {
+  background: color-mix(in oklab, var(--accent) 20%, var(--surface));
+}
+
+.sprint-cta:active {
+  transform: translateY(1px);
+}
+
+.sprint-cta .sc-emoji {
+  font-size: 1.7rem;
+}
+
+.sprint-cta .sc-text {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.sprint-cta .sc-text b {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.sprint-cta .sc-text small {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.sprint-cta .sc-go {
+  font-size: 1.3rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+
 .recent h3 {
   margin: 0 0 0.5rem;
   font-size: 0.9rem;
