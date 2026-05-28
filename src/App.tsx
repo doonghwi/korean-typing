@@ -19,6 +19,7 @@ import {
   clearCurrentUser,
   getAllTimeBest,
   getCurrentUser,
+  getTodayBest,
   getUserLang,
   getWeakKeys,
   recordKeyStats,
@@ -132,6 +133,11 @@ function App() {
     return getAllTimeBest(user, sessionLang)?.cpm ?? 0
   }, [sessionKey, user, sessionSource, sessionLang])
 
+  const sessionTodayBestCpm = useMemo(() => {
+    if (!user || !sessionSource) return 0
+    return getTodayBest(user, sessionLang)?.cpm ?? 0
+  }, [sessionKey, user, sessionSource, sessionLang])
+
   const sprintKey = view.kind === 'sprint' ? view.sessionKey : null
   const sprintLang = view.kind === 'sprint' ? view.lang : lang
   const sprintLines = useMemo(
@@ -192,6 +198,7 @@ function App() {
               title={sourceLabel(sessionSource)}
               lines={shuffledLines}
               bestCpm={sessionBestCpm}
+              todayBestCpm={sessionTodayBestCpm}
               weakKeys={sessionWeakKeys}
               onLineComplete={onLineComplete}
               onExit={goToProfile}
@@ -202,6 +209,7 @@ function App() {
               title={sourceLabel(sessionSource)}
               lines={shuffledLines}
               bestCpm={sessionBestCpm}
+              todayBestCpm={sessionTodayBestCpm}
               weakKeys={sessionWeakKeys}
               onLineComplete={onLineComplete}
               onExit={goToProfile}

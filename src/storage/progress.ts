@@ -230,7 +230,7 @@ interface KeyStatsStore {
 }
 
 const keyStatsKey = (name: string, lang: Lang) => `taza:user:${name}:keystats:${lang}`
-const MIN_KEY_ATTEMPTS = 5
+const MIN_KEY_ATTEMPTS = 3
 
 const readKeyStats = (name: string, lang: Lang): KeyStatsStore =>
   readJson<KeyStatsStore>(keyStatsKey(name, lang)) ?? { attempts: {}, misses: {} }

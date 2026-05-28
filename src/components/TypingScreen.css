@@ -195,6 +195,10 @@
   animation: record-pop 0.5s ease-out;
 }
 
+.record-badge.today {
+  color: #ff8a3d;
+}
+
 @keyframes record-pop {
   0% { transform: scale(0.6); opacity: 0; }
   60% { transform: scale(1.15); }

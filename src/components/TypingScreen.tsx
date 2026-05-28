@@ -22,6 +22,7 @@ interface Props {
   title?: string
   lines: string[]
   bestCpm?: number
+  todayBestCpm?: number
   weakKeys?: string[]
   onLineComplete?: (result: {
     cpm: number
@@ -65,6 +66,7 @@ export const TypingScreen = ({
   title,
   lines,
   bestCpm = 0,
+  todayBestCpm = 0,
   weakKeys,
   onLineComplete,
   onFinishAll,
@@ -82,13 +84,15 @@ export const TypingScreen = ({
   const advanceRef = useRef<() => void>(() => {})
   // Highest CPM already achieved (prior best at start, then session highs).
   const beatenBestRef = useRef(bestCpm)
+  const beatenTodayRef = useRef(todayBestCpm)
 
   useEffect(() => {
     setLineIdx(0)
     setLineResults([])
     setAllDone(false)
     beatenBestRef.current = bestCpm
-  }, [lines, bestCpm])
+    beatenTodayRef.current = todayBestCpm
+  }, [lines, bestCpm, todayBestCpm])
 
   useEffect(() => {
     if (state.finishedAt) return
@@ -116,6 +120,7 @@ export const TypingScreen = ({
       })
     }
     beatenBestRef.current = Math.max(beatenBestRef.current, derived.charsPerMinute)
+    beatenTodayRef.current = Math.max(beatenTodayRef.current, derived.charsPerMinute)
     if (lineIdx < lines.length - 1) {
       setLineIdx((idx) => idx + 1)
     }
@@ -161,12 +166,19 @@ export const TypingScreen = ({
   const prevLine = lineIdx > 0 ? lines[lineIdx - 1] : null
   const nextLine = lineIdx < lines.length - 1 ? lines[lineIdx + 1] : null
 
-  const isNewRecord =
+  const eligibleForRecord =
     !!state.finishedAt &&
     state.errorCount === 0 &&
-    currentLine.length >= MIN_PB_CHARS &&
+    currentLine.length >= MIN_PB_CHARS
+  const isNewRecord =
+    eligibleForRecord &&
     beatenBestRef.current > 0 &&
     derived.charsPerMinute > beatenBestRef.current
+  const isTodayRecord =
+    !isNewRecord &&
+    eligibleForRecord &&
+    beatenTodayRef.current > 0 &&
+    derived.charsPerMinute > beatenTodayRef.current
 
   const charStatus = (charIdx: number): CharStatus => {
     const start = charIdx === 0 ? 0 : derived.boundaries[charIdx - 1]
@@ -250,6 +262,8 @@ export const TypingScreen = ({
             <div className="line-finished">
               {isNewRecord ? (
                 <span className="record-badge">🎉 신기록!</span>
+              ) : isTodayRecord ? (
+                <span className="record-badge today">🔥 오늘 신기록!</span>
               ) : null}
               ✓ {Math.round(derived.charsPerMinute)} CPM ·{' '}
               {Math.round(derived.accuracy * 100)}%
