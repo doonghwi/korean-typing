@@ -309,10 +309,14 @@ const Achievements = ({ userName }: { userName: string }) => {
           <li
             key={a.id}
             className={`ach-badge${a.earned ? ' earned' : ''}`}
-            title={a.desc}
+            tabIndex={0}
           >
             <span className="ach-emoji">{a.emoji}</span>
             <span className="ach-title">{a.title}</span>
+            <span className="ach-tip" role="tooltip">
+              {a.earned ? '달성! ' : ''}
+              {a.desc}
+            </span>
           </li>
         ))}
       </ul>
