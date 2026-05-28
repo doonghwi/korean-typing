@@ -126,18 +126,19 @@ export const FallingGame = ({ lang, pool, bestScore, onComplete, onExit }: Props
 
   // Typing.
   useEffect(() => {
-    const tryMatch = (text: string) => {
-      if (!text) return
-      // Clear the lowest word that matches exactly.
-      const matches = wordsRef.current.filter((w) => w.text === text)
-      if (matches.length === 0) return
-      const target = matches.reduce((a, b) => (b.y > a.y ? b : a))
-      const next = wordsRef.current.filter((w) => w.id !== target.id)
-      wordsRef.current = next
-      setWords(next)
-      const ns = scoreRef.current + 1
-      scoreRef.current = ns
-      setScore(ns)
+    // Submit on Enter: clear the lowest word matching the typed text (if any),
+    // then reset the input either way.
+    const submit = (text: string) => {
+      const matches = text ? wordsRef.current.filter((w) => w.text === text) : []
+      if (matches.length > 0) {
+        const target = matches.reduce((a, b) => (b.y > a.y ? b : a))
+        const next = wordsRef.current.filter((w) => w.id !== target.id)
+        wordsRef.current = next
+        setWords(next)
+        const ns = scoreRef.current + 1
+        scoreRef.current = ns
+        setScore(ns)
+      }
       clearTyping()
     }
 
@@ -145,6 +146,11 @@ export const FallingGame = ({ lang, pool, bestScore, onComplete, onExit }: Props
       if (gameOverRef.current) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
 
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        submit(lang === 'en' ? bufferRef.current : renderState(composerRef.current))
+        return
+      }
       if (e.key === 'Escape') {
         e.preventDefault()
         clearTyping()
@@ -167,7 +173,6 @@ export const FallingGame = ({ lang, pool, bestScore, onComplete, onExit }: Props
         e.preventDefault()
         bufferRef.current += e.key
         setTyped(bufferRef.current)
-        tryMatch(bufferRef.current)
         return
       }
 
@@ -184,9 +189,7 @@ export const FallingGame = ({ lang, pool, bestScore, onComplete, onExit }: Props
       } else {
         return
       }
-      const rendered = renderState(composerRef.current)
-      setTyped(rendered)
-      tryMatch(rendered)
+      setTyped(renderState(composerRef.current))
     }
 
     document.addEventListener('keydown', onKey)
@@ -257,11 +260,11 @@ export const FallingGame = ({ lang, pool, bestScore, onComplete, onExit }: Props
       </div>
 
       <div className="fg-input">
-        {typed ? typed : <span className="placeholder">떨어지는 단어를 입력!</span>}
+        {typed ? typed : <span className="placeholder">단어 입력 후 Enter!</span>}
         <span className="caret" />
       </div>
       <p className="fg-hint">
-        맨 아래 단어부터 입력하세요 · <kbd>Esc</kbd> 입력 초기화
+        단어를 입력하고 <kbd>Enter</kbd>로 제출 · <kbd>Esc</kbd> 초기화
       </p>
     </div>
   )
