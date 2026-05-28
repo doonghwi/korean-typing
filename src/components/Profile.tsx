@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import {
   getAllTimeBest,
+  getBestSprint,
   getRecentRecords,
   getStreak,
   getTodayBest,
@@ -326,6 +327,7 @@ export const Profile = ({
   const allTime = getAllTimeBest(userName, lang)
   const recent = getRecentRecords(userName, 6, lang)
   const todayCount = getTodayCount(userName, lang)
+  const bestSprint = getBestSprint(userName, lang)
 
   const isEn = lang === 'en'
   const unit = isEn ? 'WPM' : 'CPM'
@@ -414,7 +416,11 @@ export const Profile = ({
         <span className="sc-emoji">⏱️</span>
         <span className="sc-text">
           <b>1분 스프린트</b>
-          <small>1분 동안 최대한 많이 — 줄은 자동으로 넘어가요</small>
+          <small>
+            {bestSprint
+              ? `내 최고 ${isEn ? Math.round(bestSprint.correct / 5) : bestSprint.correct}${isEn ? ' 단어' : '타'} · 다시 도전!`
+              : '1분 동안 최대한 많이 — 줄은 자동으로 넘어가요'}
+          </small>
         </span>
         <span className="sc-go">→</span>
       </button>

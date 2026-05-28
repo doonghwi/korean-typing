@@ -264,3 +264,44 @@ export const getWeakKeys = (name: string, lang: Lang, n = 6): KeyStat[] => {
   out.sort((x, y) => y.rate - x.rate || y.misses - x.misses)
   return out.slice(0, n)
 }
+
+// ----- Sprint game records (local history) -----
+
+export interface SprintRecord {
+  at: number
+  lang: Lang
+  correct: number
+  accuracy: number
+}
+
+const sprintsKey = (name: string) => `taza:user:${name}:sprints`
+const MAX_SPRINTS = 100
+
+export const recordSprint = (
+  name: string,
+  lang: Lang,
+  correct: number,
+  accuracy: number
+): void => {
+  const list = readJson<SprintRecord[]>(sprintsKey(name)) ?? []
+  list.push({ at: Date.now(), lang, correct, accuracy })
+  writeJson(sprintsKey(name), list.slice(-MAX_SPRINTS))
+}
+
+export const getBestSprint = (name: string, lang: Lang): SprintRecord | null => {
+  const list = (readJson<SprintRecord[]>(sprintsKey(name)) ?? []).filter(
+    (s) => s.lang === lang
+  )
+  if (list.length === 0) return null
+  return list.reduce((best, s) => (s.correct > best.correct ? s : best))
+}
+
+export const getRecentSprints = (
+  name: string,
+  lang: Lang,
+  n: number
+): SprintRecord[] =>
+  (readJson<SprintRecord[]>(sprintsKey(name)) ?? [])
+    .filter((s) => s.lang === lang)
+    .slice(-n)
+    .reverse()

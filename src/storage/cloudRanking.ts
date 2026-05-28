@@ -11,6 +11,7 @@ import { db } from '../firebase'
 import { langOfSource, type Lang } from '../lessons/sources'
 
 const RECORDS = 'records'
+const SPRINTS = 'sprints'
 
 export interface CloudRecord {
   user: string
@@ -55,6 +56,46 @@ export const fetchTopRecords = async (
     return snap.docs.map((d) => d.data() as CloudRecord)
   } catch (err) {
     console.warn('cloudRanking: fetch top failed', err)
+    return []
+  }
+}
+
+export interface CloudSprint {
+  user: string
+  lang: Lang
+  score: number
+  accuracy: number
+  at: number
+}
+
+// Cloud sprint leaderboard. Requires Firestore rules to allow the `sprints`
+// collection (read + validated create) and a composite index on
+// (lang asc, score desc); both print an auto-create/setup link on first use.
+export const pushSprint = async (
+  record: Omit<CloudSprint, 'at'>
+): Promise<void> => {
+  try {
+    await addDoc(collection(db, SPRINTS), { ...record, at: Date.now() })
+  } catch (err) {
+    console.warn('cloudRanking: sprint push failed', err)
+  }
+}
+
+export const fetchTopSprints = async (
+  lang: Lang,
+  n = 10
+): Promise<CloudSprint[]> => {
+  try {
+    const q = query(
+      collection(db, SPRINTS),
+      where('lang', '==', lang),
+      orderBy('score', 'desc'),
+      limit(n)
+    )
+    const snap = await getDocs(q)
+    return snap.docs.map((d) => d.data() as CloudSprint)
+  } catch (err) {
+    console.warn('cloudRanking: fetch sprints failed', err)
     return []
   }
 }

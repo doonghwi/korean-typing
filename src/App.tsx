@@ -18,14 +18,17 @@ import {
 import {
   clearCurrentUser,
   getAllTimeBest,
+  getBestSprint,
   getCurrentUser,
   getTodayBest,
   getUserLang,
   getWeakKeys,
   recordKeyStats,
   recordLine,
+  recordSprint,
   setUserLang,
 } from './storage/progress'
+import { pushSprint } from './storage/cloudRanking'
 import { shuffle } from './utils/shuffle'
 import './App.css'
 
@@ -144,6 +147,19 @@ function App() {
     () => (sprintKey === null ? [] : shuffle(buildSprintPool(sprintLang))),
     [sprintKey, sprintLang]
   )
+  const sprintBest =
+    user && view.kind === 'sprint'
+      ? getBestSprint(user, view.lang)?.correct ?? 0
+      : 0
+
+  const onSprintComplete = useCallback(
+    (correct: number, accuracy: number) => {
+      if (!user || view.kind !== 'sprint') return
+      recordSprint(user, view.lang, correct, accuracy)
+      void pushSprint({ user, lang: view.lang, score: correct, accuracy })
+    },
+    [user, view]
+  )
 
   return (
     <main className="app">
@@ -179,6 +195,9 @@ function App() {
             key={view.sessionKey}
             lang={view.lang}
             lines={sprintLines}
+            userName={user ?? ''}
+            bestSprint={sprintBest}
+            onComplete={onSprintComplete}
             onExit={goToProfile}
           />
         </>

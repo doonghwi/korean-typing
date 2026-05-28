@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTypingSession } from '../hooks/useTypingSession'
 import { useEnglishSession } from '../hooks/useEnglishSession'
 import { useCountdown } from '../hooks/useCountdown'
+import { fetchTopSprints, type CloudSprint } from '../storage/cloudRanking'
 import type { Lang } from '../lessons/sources'
 import './SprintScreen.css'
 
@@ -40,22 +41,67 @@ const SprintHud = ({
   </div>
 )
 
+const SprintLeaderboard = ({
+  lang,
+  userName,
+}: {
+  lang: Lang
+  userName: string
+}) => {
+  const [rows, setRows] = useState<CloudSprint[] | null>(null)
+  useEffect(() => {
+    let alive = true
+    fetchTopSprints(lang, 5).then((r) => {
+      if (alive) setRows(r)
+    })
+    return () => {
+      alive = false
+    }
+  }, [lang])
+
+  if (rows === null) return <p className="sl-empty">랭킹 불러오는 중…</p>
+  if (rows.length === 0) return null
+
+  return (
+    <ol className="sprint-lb">
+      {rows.map((r, i) => (
+        <li
+          key={`${r.user}-${r.at}-${i}`}
+          className={`sl-row${r.user === userName ? ' me' : ''}`}
+        >
+          <span className="sl-rank">{i + 1}</span>
+          <span className="sl-user">{r.user}</span>
+          <span className="sl-score">
+            {lang === 'en' ? Math.round(r.score / 5) : r.score}
+          </span>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
 const SprintSummary = ({
   lang,
+  userName,
   totals,
+  bestSprint,
   onRestart,
   onExit,
 }: {
   lang: Lang
+  userName: string
   totals: Totals
+  bestSprint: number
   onRestart: () => void
   onExit: () => void
 }) => {
   const value = lang === 'en' ? Math.round(totals.correct / 5) : totals.correct
   const unit = lang === 'en' ? '단어 (1분)' : '타 (1분)'
+  const isNewBest = totals.correct >= bestSprint && totals.correct > 0
   return (
     <div className="sprint-summary">
       <h2>⏱️ 스프린트 종료!</h2>
+      {isNewBest ? <div className="ss-newbest">🏅 내 최고 기록!</div> : null}
       <div className="ss-big">
         {value}
         <span className="ss-unit">{unit}</span>
@@ -63,6 +109,7 @@ const SprintSummary = ({
       <div className="ss-sub">
         정확도 {accuracyPct(totals)}% · 정타 {totals.correct} · 오타 {totals.errors}
       </div>
+      <SprintLeaderboard lang={lang} userName={userName} />
       <div className="actions">
         <button onClick={onRestart}>다시</button>
         <button className="primary" onClick={onExit}>
@@ -162,7 +209,37 @@ const useSprintEngine = (
   return { remaining, done, live, snapshot, resetEngine }
 }
 
-const SprintKo = ({ lines, onExit }: { lines: string[]; onExit: () => void }) => {
+// Fire onComplete exactly once per sprint when the result freezes.
+const useFireOnComplete = (
+  snapshot: Totals | null,
+  onComplete: (correct: number, accuracy: number) => void
+) => {
+  const firedRef = useRef(false)
+  useEffect(() => {
+    if (snapshot && !firedRef.current) {
+      firedRef.current = true
+      const total = snapshot.correct + snapshot.errors
+      onComplete(snapshot.correct, total > 0 ? snapshot.correct / total : 1)
+    }
+    if (!snapshot) firedRef.current = false
+  }, [snapshot, onComplete])
+}
+
+interface SprintInnerProps {
+  lines: string[]
+  userName: string
+  bestSprint: number
+  onComplete: (correct: number, accuracy: number) => void
+  onExit: () => void
+}
+
+const SprintKo = ({
+  lines,
+  userName,
+  bestSprint,
+  onComplete,
+  onExit,
+}: SprintInnerProps) => {
   const [lineIdx, setLineIdx] = useState(0)
   const currentLine = lines.length > 0 ? lines[lineIdx % lines.length] : ''
   const { state, derived, restart } = useTypingSession(currentLine)
@@ -174,12 +251,15 @@ const SprintKo = ({ lines, onExit }: { lines: string[]; onExit: () => void }) =>
     state.errorCount,
     () => setLineIdx((i) => i + 1)
   )
+  useFireOnComplete(snapshot, onComplete)
 
   if (snapshot) {
     return (
       <SprintSummary
         lang="ko"
+        userName={userName}
         totals={snapshot}
+        bestSprint={bestSprint}
         onRestart={() => {
           resetEngine()
           setLineIdx(0)
@@ -202,7 +282,13 @@ const SprintKo = ({ lines, onExit }: { lines: string[]; onExit: () => void }) =>
   )
 }
 
-const SprintEn = ({ lines, onExit }: { lines: string[]; onExit: () => void }) => {
+const SprintEn = ({
+  lines,
+  userName,
+  bestSprint,
+  onComplete,
+  onExit,
+}: SprintInnerProps) => {
   const [lineIdx, setLineIdx] = useState(0)
   const currentLine = lines.length > 0 ? lines[lineIdx % lines.length] : ''
   const { state, derived, restart } = useEnglishSession(currentLine)
@@ -214,12 +300,15 @@ const SprintEn = ({ lines, onExit }: { lines: string[]; onExit: () => void }) =>
     state.errorCount,
     () => setLineIdx((i) => i + 1)
   )
+  useFireOnComplete(snapshot, onComplete)
 
   if (snapshot) {
     return (
       <SprintSummary
         lang="en"
+        userName={userName}
         totals={snapshot}
+        bestSprint={bestSprint}
         onRestart={() => {
           resetEngine()
           setLineIdx(0)
@@ -245,12 +334,34 @@ const SprintEn = ({ lines, onExit }: { lines: string[]; onExit: () => void }) =>
 interface Props {
   lang: Lang
   lines: string[]
+  userName: string
+  bestSprint: number
+  onComplete: (correct: number, accuracy: number) => void
   onExit: () => void
 }
 
-export const SprintScreen = ({ lang, lines, onExit }: Props) =>
+export const SprintScreen = ({
+  lang,
+  lines,
+  userName,
+  bestSprint,
+  onComplete,
+  onExit,
+}: Props) =>
   lang === 'en' ? (
-    <SprintEn lines={lines} onExit={onExit} />
+    <SprintEn
+      lines={lines}
+      userName={userName}
+      bestSprint={bestSprint}
+      onComplete={onComplete}
+      onExit={onExit}
+    />
   ) : (
-    <SprintKo lines={lines} onExit={onExit} />
+    <SprintKo
+      lines={lines}
+      userName={userName}
+      bestSprint={bestSprint}
+      onComplete={onComplete}
+      onExit={onExit}
+    />
   )
