@@ -5,7 +5,9 @@ import {
   getStreak,
   getTodayBest,
   getTodayCount,
+  getWeakKeys,
   type BestRecord,
+  type KeyStat,
   type LineRecord,
   type StreakInfo,
 } from '../storage/progress'
@@ -18,6 +20,7 @@ import {
   WORD_OPTIONS_EN,
   type Lang,
 } from '../lessons/sources'
+import { jamoToKey } from '../hangul/dubeolsik'
 import { Leaderboard } from './Leaderboard'
 import './Profile.css'
 
@@ -26,6 +29,7 @@ interface Props {
   lang: Lang
   onLangChange: (lang: Lang) => void
   onStart: (source: string) => void
+  onStartWeak: () => void
   onSwitchUser: () => void
 }
 
@@ -245,11 +249,51 @@ const StreakBanner = ({ userName, lang }: { userName: string; lang: Lang }) => {
   )
 }
 
+const WeakKeyChip = ({ stat, lang }: { stat: KeyStat; lang: Lang }) => {
+  const keyHint = lang === 'ko' ? jamoToKey(stat.key)?.toUpperCase() ?? null : null
+  return (
+    <li className="wk-chip">
+      <span className="wk-key">{stat.key}</span>
+      {keyHint ? <span className="wk-hint">{keyHint}</span> : null}
+      <span className="wk-rate">{Math.round(stat.rate * 100)}%</span>
+    </li>
+  )
+}
+
+const WeakKeys = ({
+  userName,
+  lang,
+  onStartWeak,
+}: {
+  userName: string
+  lang: Lang
+  onStartWeak: () => void
+}) => {
+  const weak = useMemo(() => getWeakKeys(userName, lang), [userName, lang])
+  if (weak.length === 0) return null
+  return (
+    <section className="weak-keys">
+      <div className="wk-header">
+        <h3>약점 키 — 자주 틀리는 {lang === 'en' ? '글자' : '자모'}</h3>
+        <button className="wk-start" onClick={onStartWeak}>
+          맞춤 연습 →
+        </button>
+      </div>
+      <ul className="wk-list">
+        {weak.map((k) => (
+          <WeakKeyChip key={k.key} stat={k} lang={lang} />
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 export const Profile = ({
   userName,
   lang,
   onLangChange,
   onStart,
+  onStartWeak,
   onSwitchUser,
 }: Props) => {
   const positionOptions = lang === 'en' ? POSITION_OPTIONS_EN : POSITION_OPTIONS
@@ -320,6 +364,8 @@ export const Profile = ({
           formatValue={formatValue}
         />
       </div>
+
+      <WeakKeys userName={userName} lang={lang} onStartWeak={onStartWeak} />
 
       <div className="practice-sections">
         <PracticeSection

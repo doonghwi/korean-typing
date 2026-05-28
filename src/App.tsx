@@ -4,10 +4,13 @@ import { TypingScreenEn } from './components/TypingScreenEn'
 import { UserPicker } from './components/UserPicker'
 import { Profile } from './components/Profile'
 import {
+  buildWeakPracticeLines,
   isValidSource,
   langOfSource,
   linesForSource,
   sourceLabel,
+  WEAK_SOURCE,
+  WEAK_SOURCE_EN,
   type Lang,
 } from './lessons/sources'
 import {
@@ -15,6 +18,8 @@ import {
   getAllTimeBest,
   getCurrentUser,
   getUserLang,
+  getWeakKeys,
+  recordKeyStats,
   recordLine,
   setUserLang,
 } from './storage/progress'
@@ -24,7 +29,13 @@ import './App.css'
 type View =
   | { kind: 'pick-user' }
   | { kind: 'profile' }
-  | { kind: 'session'; source: string; sessionKey: number }
+  | {
+      kind: 'session'
+      source: string
+      sessionKey: number
+      customLines?: string[]
+      weakKeys?: string[]
+    }
 
 function App() {
   const initialUser = getCurrentUser()
@@ -54,6 +65,20 @@ function App() {
     setView({ kind: 'session', source, sessionKey: Date.now() })
   }, [])
 
+  const startWeakPractice = useCallback(() => {
+    if (!user) return
+    const weak = getWeakKeys(user, lang).map((k) => k.key)
+    const lines = buildWeakPracticeLines(weak, lang)
+    if (lines.length === 0) return
+    setView({
+      kind: 'session',
+      source: lang === 'en' ? WEAK_SOURCE_EN : WEAK_SOURCE,
+      sessionKey: Date.now(),
+      customLines: lines,
+      weakKeys: weak,
+    })
+  }, [user, lang])
+
   const changeLang = useCallback(
     (next: Lang) => {
       if (user) setUserLang(user, next)
@@ -63,9 +88,21 @@ function App() {
   )
 
   const onLineComplete = useCallback(
-    (r: { cpm: number; accuracy: number; seconds: number; text: string }) => {
+    (r: {
+      cpm: number
+      accuracy: number
+      seconds: number
+      text: string
+      keyStats: { attempts: Record<string, number>; misses: Record<string, number> }
+    }) => {
       if (user && view.kind === 'session') {
         recordLine(user, view.source, r.cpm, r.accuracy, r.text)
+        recordKeyStats(
+          user,
+          langOfSource(view.source),
+          r.keyStats.attempts,
+          r.keyStats.misses
+        )
       }
     },
     [user, view]
@@ -73,11 +110,13 @@ function App() {
 
   const sessionSource = view.kind === 'session' ? view.source : null
   const sessionKey = view.kind === 'session' ? view.sessionKey : null
+  const sessionCustomLines = view.kind === 'session' ? view.customLines : undefined
+  const sessionWeakKeys = view.kind === 'session' ? view.weakKeys : undefined
   const sessionLang: Lang = sessionSource ? langOfSource(sessionSource) : 'ko'
   const shuffledLines = useMemo(() => {
     if (!sessionSource) return []
-    return shuffle(linesForSource(sessionSource))
-  }, [sessionKey, sessionSource])
+    return shuffle(sessionCustomLines ?? linesForSource(sessionSource))
+  }, [sessionKey, sessionSource, sessionCustomLines])
 
   // Personal-best baseline frozen at session start, so beating it mid-session
   // doesn't immediately stop the "new record" celebration.
@@ -105,9 +144,13 @@ function App() {
           lang={lang}
           onLangChange={changeLang}
           onStart={startSession}
+          onStartWeak={startWeakPractice}
           onSwitchUser={switchUser}
         />
-      ) : view.kind === 'session' && sessionSource && isValidSource(sessionSource) ? (
+      ) : view.kind === 'session' &&
+        sessionSource &&
+        ((sessionCustomLines && sessionCustomLines.length > 0) ||
+          isValidSource(sessionSource)) ? (
         <>
           <div className="back-row">
             <button className="back-btn" onClick={goToProfile}>
@@ -120,6 +163,7 @@ function App() {
               title={sourceLabel(sessionSource)}
               lines={shuffledLines}
               bestCpm={sessionBestCpm}
+              weakKeys={sessionWeakKeys}
               onLineComplete={onLineComplete}
               onExit={goToProfile}
             />
@@ -129,6 +173,7 @@ function App() {
               title={sourceLabel(sessionSource)}
               lines={shuffledLines}
               bestCpm={sessionBestCpm}
+              weakKeys={sessionWeakKeys}
               onLineComplete={onLineComplete}
               onExit={goToProfile}
             />

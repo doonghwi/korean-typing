@@ -212,6 +212,85 @@
   color: white;
 }
 
+.weak-keys {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.8rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.weak-keys .wk-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.weak-keys h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.wk-start {
+  background: color-mix(in oklab, var(--wrong) 16%, transparent);
+  border: 1px solid color-mix(in oklab, var(--wrong) 40%, transparent);
+  color: var(--wrong);
+  padding: 0.35rem 0.7rem;
+  border-radius: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.wk-start:hover {
+  background: color-mix(in oklab, var(--wrong) 26%, transparent);
+}
+
+.wk-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.wk-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  background: color-mix(in oklab, var(--wrong) 12%, var(--bg));
+  border: 1px solid color-mix(in oklab, var(--wrong) 30%, var(--border));
+  border-radius: 0.5rem;
+  padding: 0.3rem 0.55rem;
+}
+
+.wk-chip .wk-key {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.wk-chip .wk-hint {
+  font-size: 0.65rem;
+  color: var(--muted);
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+.wk-chip .wk-rate {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--wrong);
+  font-variant-numeric: tabular-nums;
+}
+
 .stat-cards {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

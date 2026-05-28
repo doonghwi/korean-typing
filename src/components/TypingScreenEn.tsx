@@ -6,19 +6,41 @@ import { findKeyByChar } from './keyboard/layout'
 import { Stats } from './Stats'
 import './TypingScreen.css'
 
+interface KeyStatsDelta {
+  attempts: Record<string, number>
+  misses: Record<string, number>
+}
+
 interface Props {
   title?: string
   lines: string[]
   bestCpm?: number
+  weakKeys?: string[]
   onLineComplete?: (result: {
     cpm: number
     wpm: number
     accuracy: number
     seconds: number
     text: string
+    keyStats: KeyStatsDelta
   }) => void
   onFinishAll?: () => void
   onExit?: () => void
+}
+
+// Per-letter attempt/miss counts (letters bucketed lowercase, spaces skipped).
+const computeKeyStats = (inputs: string[], targetChars: string[]): KeyStatsDelta => {
+  const attempts: Record<string, number> = {}
+  const misses: Record<string, number> = {}
+  const n = Math.min(inputs.length, targetChars.length)
+  for (let i = 0; i < n; i++) {
+    const exp = targetChars[i]
+    if (exp === ' ') continue
+    const key = /[A-Za-z]/.test(exp) ? exp.toLowerCase() : exp
+    attempts[key] = (attempts[key] ?? 0) + 1
+    if (inputs[i] !== exp) misses[key] = (misses[key] ?? 0) + 1
+  }
+  return { attempts, misses }
 }
 
 interface LineResult {
@@ -39,6 +61,7 @@ export const TypingScreenEn = ({
   title,
   lines,
   bestCpm = 0,
+  weakKeys,
   onLineComplete,
   onFinishAll,
   onExit,
@@ -86,6 +109,7 @@ export const TypingScreenEn = ({
         accuracy: derived.accuracy,
         seconds: derived.elapsedSeconds,
         text: currentLine,
+        keyStats: computeKeyStats(state.inputs, state.targetChars),
       })
     }
     beatenBestRef.current = Math.max(beatenBestRef.current, derived.charsPerMinute)
@@ -246,7 +270,7 @@ export const TypingScreenEn = ({
       </div>
 
       <div className="keyboard-wrapper">
-        <Keyboard nextKeyChar={nextKeyChar} lang="en" />
+        <Keyboard nextKeyChar={nextKeyChar} lang="en" weakKeys={weakKeys} />
         <HandOverlay activeFinger={activeFinger} nextKeyChar={nextKeyChar} />
       </div>
 

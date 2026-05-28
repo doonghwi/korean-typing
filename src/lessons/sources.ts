@@ -16,6 +16,7 @@ import {
   wordsAtLevelEn,
   findPositionStageEn,
 } from './data-en'
+import { decomposeText } from '../hangul'
 
 export type Lang = 'ko' | 'en'
 
@@ -116,6 +117,8 @@ export const sourceLabel = (source: string): string => {
   if (source === SENTENCES_SHORT) return '문장연습 — 짧은 문장'
   if (source === SENTENCES_LONG) return '문장연습 — 긴 글'
 
+  if (isWeakSource(source)) return '약점 맞춤 연습'
+
   return source
 }
 
@@ -158,6 +161,43 @@ export const isRecordRankingEligible = (
   text: string,
   accuracy: number
 ): boolean => isRankableSource(source, text) && accuracy >= 1
+
+// ----- Weak-key custom practice -----
+
+export const WEAK_SOURCE = 'weak'
+export const WEAK_SOURCE_EN = 'en-weak'
+
+export const isWeakSource = (source: string): boolean =>
+  source === WEAK_SOURCE || source === WEAK_SOURCE_EN
+
+const WEAK_TARGET_LINES = 30
+
+// Builds a practice set from words (then sentences as fallback) that contain
+// the user's weak jamo (ko) / letters (en). `weakKeys` are base jamo for ko.
+export const buildWeakPracticeLines = (weakKeys: string[], lang: Lang): string[] => {
+  if (weakKeys.length === 0) return []
+  const set = new Set(weakKeys)
+
+  if (lang === 'en') {
+    const words = wordsAtLevelEn(MAX_WORD_LEVEL_EN).filter((w) =>
+      Array.from(w.toLowerCase()).some((c) => set.has(c))
+    )
+    if (words.length >= WEAK_TARGET_LINES) return words.slice(0, WEAK_TARGET_LINES)
+    const sentences = shortLinesEn().filter((s) =>
+      Array.from(s.toLowerCase()).some((c) => set.has(c))
+    )
+    return [...words, ...sentences].slice(0, WEAK_TARGET_LINES)
+  }
+
+  const words = wordsAtLevel(MAX_WORD_LEVEL).filter((w) =>
+    decomposeText(w).some((j) => set.has(j))
+  )
+  if (words.length >= WEAK_TARGET_LINES) return words.slice(0, WEAK_TARGET_LINES)
+  const sentences = shortLines().filter((s) =>
+    decomposeText(s).some((j) => set.has(j))
+  )
+  return [...words, ...sentences].slice(0, WEAK_TARGET_LINES)
+}
 
 // ----- Option lists for the Profile dropdowns -----
 

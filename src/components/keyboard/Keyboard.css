@@ -60,6 +60,17 @@
   transform: translateY(-2px);
 }
 
+/* Weak keys (custom practice): warn tint, overridden by .next when active. */
+.key.weak {
+  border-color: var(--wrong);
+  background: color-mix(in oklab, var(--wrong) 18%, var(--key));
+}
+
+.key.weak .jamo,
+.key.weak .ascii {
+  color: var(--wrong);
+}
+
 .key .ascii {
   font-size: 0.7rem;
   opacity: 0.6;

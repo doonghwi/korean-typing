@@ -13,18 +13,39 @@ const expectedToKeyChar = (expected: string | null): string | null => {
   return jamoToKey(expected) ?? expected
 }
 
+interface KeyStatsDelta {
+  attempts: Record<string, number>
+  misses: Record<string, number>
+}
+
 interface Props {
   title?: string
   lines: string[]
   bestCpm?: number
+  weakKeys?: string[]
   onLineComplete?: (result: {
     cpm: number
     accuracy: number
     seconds: number
     text: string
+    keyStats: KeyStatsDelta
   }) => void
   onFinishAll?: () => void
   onExit?: () => void
+}
+
+// Per-jamo attempt/miss counts for the finished line (skips spaces).
+const computeKeyStats = (inputs: string[], targetJamo: string[]): KeyStatsDelta => {
+  const attempts: Record<string, number> = {}
+  const misses: Record<string, number> = {}
+  const n = Math.min(inputs.length, targetJamo.length)
+  for (let i = 0; i < n; i++) {
+    const exp = targetJamo[i]
+    if (exp === ' ') continue
+    attempts[exp] = (attempts[exp] ?? 0) + 1
+    if (inputs[i] !== exp) misses[exp] = (misses[exp] ?? 0) + 1
+  }
+  return { attempts, misses }
 }
 
 interface LineResult {
@@ -44,6 +65,7 @@ export const TypingScreen = ({
   title,
   lines,
   bestCpm = 0,
+  weakKeys,
   onLineComplete,
   onFinishAll,
   onExit,
@@ -90,6 +112,7 @@ export const TypingScreen = ({
         accuracy: derived.accuracy,
         seconds: derived.elapsedSeconds,
         text: currentLine,
+        keyStats: computeKeyStats(state.inputs, state.targetJamo),
       })
     }
     beatenBestRef.current = Math.max(beatenBestRef.current, derived.charsPerMinute)
@@ -252,7 +275,7 @@ export const TypingScreen = ({
       </div>
 
       <div className="keyboard-wrapper">
-        <Keyboard nextKeyChar={nextKeyChar} />
+        <Keyboard nextKeyChar={nextKeyChar} weakKeys={weakKeys} />
         <HandOverlay activeFinger={activeFinger} nextKeyChar={nextKeyChar} />
       </div>
 

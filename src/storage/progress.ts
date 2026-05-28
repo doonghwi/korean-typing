@@ -214,3 +214,53 @@ export const getStreak = (name: string): StreakInfo => {
 
   return { current, best, activeToday }
 }
+
+// ----- Per-key error stats (weak-key analysis) -----
+
+export interface KeyStat {
+  key: string
+  attempts: number
+  misses: number
+  rate: number
+}
+
+interface KeyStatsStore {
+  attempts: Record<string, number>
+  misses: Record<string, number>
+}
+
+const keyStatsKey = (name: string, lang: Lang) => `taza:user:${name}:keystats:${lang}`
+const MIN_KEY_ATTEMPTS = 5
+
+const readKeyStats = (name: string, lang: Lang): KeyStatsStore =>
+  readJson<KeyStatsStore>(keyStatsKey(name, lang)) ?? { attempts: {}, misses: {} }
+
+export const recordKeyStats = (
+  name: string,
+  lang: Lang,
+  attempts: Record<string, number>,
+  misses: Record<string, number>
+): void => {
+  const store = readKeyStats(name, lang)
+  for (const [k, v] of Object.entries(attempts)) {
+    store.attempts[k] = (store.attempts[k] ?? 0) + v
+  }
+  for (const [k, v] of Object.entries(misses)) {
+    store.misses[k] = (store.misses[k] ?? 0) + v
+  }
+  writeJson(keyStatsKey(name, lang), store)
+}
+
+// Keys with enough samples and at least one miss, ranked by miss rate.
+export const getWeakKeys = (name: string, lang: Lang, n = 6): KeyStat[] => {
+  const { attempts, misses } = readKeyStats(name, lang)
+  const out: KeyStat[] = []
+  for (const [key, a] of Object.entries(attempts)) {
+    if (a < MIN_KEY_ATTEMPTS) continue
+    const m = misses[key] ?? 0
+    if (m === 0) continue
+    out.push({ key, attempts: a, misses: m, rate: m / a })
+  }
+  out.sort((x, y) => y.rate - x.rate || y.misses - x.misses)
+  return out.slice(0, n)
+}
