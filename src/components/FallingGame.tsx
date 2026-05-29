@@ -15,7 +15,6 @@ import type { Lang } from '../lessons/sources'
 import './FallingGame.css'
 
 const MAX_LIVES = 5
-const TICK_MS = 50
 
 interface FallingWord {
   id: number
@@ -152,12 +151,15 @@ export const FallingGame = ({
     setTyped('')
   }
 
-  // Game loop: move words, spawn, detect floor hits.
+  // Game loop: move words, spawn, detect floor hits. Driven by
+  // requestAnimationFrame (~60fps) so motion is smooth; movement is scaled by
+  // real elapsed time (dt) so speed is the same regardless of frame rate.
   useEffect(() => {
     if (gameOver) return
+    let raf = 0
     let lastTick = Date.now()
     let lastSpawn = Date.now() - 1500
-    const id = window.setInterval(() => {
+    const step = () => {
       if (gameOverRef.current) return
       const now = Date.now()
       const dt = Math.min(0.12, (now - lastTick) / 1000)
@@ -186,10 +188,13 @@ export const FallingGame = ({
         if (nl <= 0) {
           gameOverRef.current = true
           setGameOver(true)
+          return
         }
       }
-    }, TICK_MS)
-    return () => window.clearInterval(id)
+      raf = requestAnimationFrame(step)
+    }
+    raf = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameOver, round])
 
