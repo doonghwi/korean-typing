@@ -704,6 +704,64 @@
   font-size: 0.8rem;
 }
 
+/* 연속 출석 랭킹 — streak 배너와 같은 불꽃 톤으로 묶어서 보여준다 */
+.streak-lb-card {
+  --flame: #ff8a3d;
+  margin-top: -0.4rem;
+  padding: 0.7rem 0.9rem 0.8rem;
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in oklab, var(--flame) 28%, var(--border));
+  background: color-mix(in oklab, var(--flame) 7%, var(--surface));
+}
+
+.streak-lb-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: color-mix(in oklab, var(--flame) 70%, var(--text));
+  margin-bottom: 0.45rem;
+}
+
+.streak-lb {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.streak-lb-row {
+  display: grid;
+  grid-template-columns: 1.6rem 1fr auto;
+  gap: 0.6rem;
+  align-items: baseline;
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.4rem;
+  font-size: 0.88rem;
+}
+
+.streak-lb-row.me {
+  background: color-mix(in oklab, var(--flame) 16%, transparent);
+}
+
+.streak-lb-rank {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.streak-lb-user {
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.streak-lb-score {
+  font-weight: 700;
+  color: color-mix(in oklab, var(--flame) 75%, var(--text));
+  font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 480px) {
   .stat-cards {
     grid-template-columns: minmax(0, 1fr);

@@ -1,5 +1,5 @@
 import { isRecordRankingEligible, langOfSource, type Lang } from '../lessons/sources'
-import { pushRecord } from './cloudRanking'
+import { pushRecord, pushStreak } from './cloudRanking'
 
 export interface LineRecord {
   at: number
@@ -107,6 +107,11 @@ export const recordLine = (
   }
   writeJson(userKey(name), progress)
 
+  // A completed line may extend today's streak — keep the cloud leaderboard
+  // in sync (no-op unless the best streak grew). Runs for every line, not just
+  // ranking-eligible ones, since any practice day counts toward a streak.
+  syncStreakRanking(name)
+
   if (!isRecordRankingEligible(source, text, accuracy)) return
   void pushRecord({
     user: name,
@@ -213,6 +218,20 @@ export const getStreak = (name: string): StreakInfo => {
   }
 
   return { current, best, activeToday }
+}
+
+const streakPushedKey = (name: string) => `taza:user:${name}:streak-pushed`
+
+// Push the user's best (longest-ever) streak to the cloud leaderboard, but only
+// when it grows past what we last sent — keeps the append-only `streaks`
+// collection from filling with duplicate same-value docs.
+export const syncStreakRanking = (name: string): void => {
+  const best = getStreak(name).best
+  if (best <= 0) return
+  const pushed = readJson<number>(streakPushedKey(name)) ?? 0
+  if (best <= pushed) return
+  writeJson(streakPushedKey(name), best)
+  void pushStreak({ user: name, streak: best })
 }
 
 // ----- Per-key error stats (weak-key analysis) -----

@@ -13,6 +13,7 @@ import { langOfSource, type Lang } from '../lessons/sources'
 const RECORDS = 'records'
 const SPRINTS = 'sprints'
 const FALLINGS = 'fallings'
+const STREAKS = 'streaks'
 
 export interface CloudRecord {
   user: string
@@ -135,6 +136,48 @@ export const fetchTopFallings = async (
     return snap.docs.map((d) => d.data() as CloudFalling)
   } catch (err) {
     console.warn('cloudRanking: fetch fallings failed', err)
+    return []
+  }
+}
+
+export interface CloudStreak {
+  user: string
+  streak: number
+  at: number
+}
+
+// Cloud streak leaderboard. Unlike sprints/fallings this is language-agnostic
+// (a streak counts any practice day across both languages), so there is no
+// `lang` filter and the single-field `orderBy('streak')` index is automatic —
+// no composite index to create. Append-only: the score grows over time, so we
+// fetch a wide window and keep each user's highest entry (dedup on read).
+export const pushStreak = async (
+  record: Omit<CloudStreak, 'at'>
+): Promise<void> => {
+  try {
+    await addDoc(collection(db, STREAKS), { ...record, at: Date.now() })
+  } catch (err) {
+    console.warn('cloudRanking: streak push failed', err)
+  }
+}
+
+export const fetchTopStreaks = async (n = 10): Promise<CloudStreak[]> => {
+  try {
+    const q = query(
+      collection(db, STREAKS),
+      orderBy('streak', 'desc'),
+      limit(50)
+    )
+    const snap = await getDocs(q)
+    const best = new Map<string, CloudStreak>()
+    for (const d of snap.docs) {
+      const r = d.data() as CloudStreak
+      // Sorted desc, so the first time we see a user is their highest streak.
+      if (!best.has(r.user)) best.set(r.user, r)
+    }
+    return [...best.values()].slice(0, n)
+  } catch (err) {
+    console.warn('cloudRanking: fetch streaks failed', err)
     return []
   }
 }

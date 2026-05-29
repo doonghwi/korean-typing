@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   getAllTimeBest,
   getBestFalling,
@@ -8,11 +8,13 @@ import {
   getTodayBest,
   getTodayCount,
   getWeakKeys,
+  syncStreakRanking,
   type BestRecord,
   type KeyStat,
   type LineRecord,
   type StreakInfo,
 } from '../storage/progress'
+import { fetchTopStreaks, type CloudStreak } from '../storage/cloudRanking'
 import {
   POSITION_OPTIONS,
   POSITION_OPTIONS_EN,
@@ -254,6 +256,50 @@ const StreakBanner = ({ userName, lang }: { userName: string; lang: Lang }) => {
   )
 }
 
+const StreakLeaderboard = ({ userName }: { userName: string }) => {
+  const [rows, setRows] = useState<CloudStreak[] | null>(null)
+  useEffect(() => {
+    let alive = true
+    // Make sure my own best streak is up on the board before we read it back.
+    syncStreakRanking(userName)
+    fetchTopStreaks(5).then((r) => {
+      if (alive) setRows(r)
+    })
+    return () => {
+      alive = false
+    }
+  }, [userName])
+
+  if (rows === null || rows.length === 0) return null
+
+  // Standard competition ranking: tied streaks share a rank and the next entry
+  // skips ahead by the number tied (1, 1, 3 …). rows are sorted streak-desc.
+  let displayRank = 0
+  let prevStreak: number | null = null
+
+  return (
+    <div className="streak-lb-card">
+      <div className="streak-lb-title">🔥 연속 출석 랭킹</div>
+      <ol className="streak-lb">
+        {rows.map((r, i) => {
+          if (prevStreak === null || r.streak !== prevStreak) displayRank = i + 1
+          prevStreak = r.streak
+          return (
+            <li
+              key={`${r.user}-${r.at}-${i}`}
+              className={`streak-lb-row${r.user === userName ? ' me' : ''}`}
+            >
+              <span className="streak-lb-rank">{displayRank}</span>
+              <span className="streak-lb-user">{r.user}</span>
+              <span className="streak-lb-score">{r.streak}일</span>
+            </li>
+          )
+        })}
+      </ol>
+    </div>
+  )
+}
+
 const WeakKeyChip = ({ stat, lang }: { stat: KeyStat; lang: Lang }) => {
   const keyHint = lang === 'ko' ? jamoToKey(stat.key)?.toUpperCase() ?? null : null
   return (
@@ -386,6 +432,8 @@ export const Profile = ({
       </div>
 
       <StreakBanner userName={userName} lang={lang} />
+
+      <StreakLeaderboard userName={userName} />
 
       <LangToggle lang={lang} onChange={onLangChange} />
 

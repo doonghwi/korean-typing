@@ -55,5 +55,19 @@ service cloud.firestore {
         && request.resource.data.at is number;
       allow update, delete: if false;
     }
+
+    // 연속 출석(streak) 점수 — 언어 무관(한/영 합산), 최장 연속일수
+    match /streaks/{id} {
+      allow read: if true;
+      allow create: if
+        request.resource.data.user is string
+        && request.resource.data.user.size() >= 1
+        && request.resource.data.user.size() <= 30
+        && request.resource.data.streak is number
+        && request.resource.data.streak >= 0
+        && request.resource.data.streak <= 100000
+        && request.resource.data.at is number;
+      allow update, delete: if false;
+    }
   }
 }
