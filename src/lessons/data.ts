@@ -527,7 +527,6 @@ export const SHORT_SENTENCES: SentenceLesson[] = [
     title: '자기소개',
     lines: [
       '저는 한국 사람입니다',
-      '제 이름은 둥희입니다',
       '만나서 반갑습니다',
       '저는 학생입니다',
       '서울에서 왔어요',
