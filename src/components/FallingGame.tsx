@@ -197,7 +197,8 @@ export const FallingGame = ({
       if (gameOverRef.current) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
 
-      if (e.key === 'Enter') {
+      // Submit on Enter or Space (falling words have no internal spaces).
+      if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
         e.preventDefault()
         submit(lang === 'en' ? bufferRef.current : renderState(composerRef.current))
         return
@@ -312,11 +313,11 @@ export const FallingGame = ({
       </div>
 
       <div className="fg-input">
-        {typed ? typed : <span className="placeholder">단어 입력 후 Enter!</span>}
+        {typed ? typed : <span className="placeholder">단어 입력 후 Enter/Space!</span>}
         <span className="caret" />
       </div>
       <p className="fg-hint">
-        단어를 입력하고 <kbd>Enter</kbd>로 제출 · <kbd>Esc</kbd> 초기화
+        단어를 입력하고 <kbd>Enter</kbd> 또는 <kbd>Space</kbd>로 제출 · <kbd>Esc</kbd> 초기화
       </p>
     </div>
   )
