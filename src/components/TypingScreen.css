@@ -163,18 +163,11 @@
   background: color-mix(in oklab, var(--wrong) 22%, transparent);
 }
 
+/* 띄어쓰기: 가운데점 대신 살짝 넓은 빈 칸. 틀리게 입력한 공백은
+   .tch.wrong 의 배경색이 그대로 적용되어 빈 칸이 빨갛게 보인다. */
 .tch.space {
-  opacity: 0.55;
-  font-size: 0.7em;
-  vertical-align: middle;
-}
-
-.tch.space.correct {
-  color: var(--correct);
-}
-
-.tch.space.wrong {
-  color: var(--wrong);
+  display: inline-block;
+  width: 0.45em;
 }
 
 .line-finished {

@@ -102,7 +102,8 @@
 }
 
 .sprint-target .tch.space {
-  opacity: 0.4;
+  display: inline-block;
+  width: 0.45em;
 }
 
 .sprint-input {
@@ -124,7 +125,8 @@
 }
 
 .sprint-input .tch.space {
-  opacity: 0.4;
+  display: inline-block;
+  width: 0.45em;
 }
 
 .sprint-input .placeholder {

@@ -188,7 +188,7 @@ export const TypingScreenEn = ({
     const cls = `tch ${status}${ch === ' ' ? ' space' : ''}`
     return (
       <span key={i} className={cls}>
-        {ch === ' ' ? '·' : ch}
+        {ch === ' ' ? '' : ch}
       </span>
     )
   }
@@ -201,7 +201,7 @@ export const TypingScreenEn = ({
         key={i}
         className={`tch ${wrong ? 'wrong' : 'correct'}${ch === ' ' ? ' space' : ''}`}
       >
-        {ch === ' ' ? '·' : ch}
+        {ch === ' ' ? '' : ch}
       </span>
     )
   }
@@ -237,7 +237,7 @@ export const TypingScreenEn = ({
         {prevLine !== null ? (
           <div className="pair prev">
             <span className="check">✓</span>
-            <div className="pair-target">{prevLine.replace(/ /g, '·')}</div>
+            <div className="pair-target">{prevLine}</div>
           </div>
         ) : null}
 
@@ -278,7 +278,7 @@ export const TypingScreenEn = ({
         {nextLine !== null ? (
           <div className="pair next">
             <span className="check pending">·</span>
-            <div className="pair-target">{nextLine.replace(/ /g, '·')}</div>
+            <div className="pair-target">{nextLine}</div>
           </div>
         ) : null}
       </div>

@@ -203,7 +203,7 @@ const inputCharsOf = (rendered: string, line: string): InputCh[] =>
 
 const SprintCharSpan = ({ ch, status }: { ch: string; status: SprintCharStatus }) => (
   <span className={`tch ${status}${ch === ' ' ? ' space' : ''}`}>
-    {ch === ' ' ? '·' : ch}
+    {ch === ' ' ? '' : ch}
   </span>
 )
 
