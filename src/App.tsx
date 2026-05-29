@@ -165,7 +165,15 @@ function App() {
     (correct: number, accuracy: number) => {
       if (!user || view.kind !== 'sprint') return
       recordSprint(user, view.lang, correct, accuracy)
-      void pushSprint({ user, lang: view.lang, score: correct, accuracy })
+      // Push the personal best (not just this run) so the board reflects the
+      // true high score and recovers records made before the cloud was set up.
+      const best = getBestSprint(user, view.lang)
+      void pushSprint({
+        user,
+        lang: view.lang,
+        score: best?.correct ?? correct,
+        accuracy: best?.accuracy ?? accuracy,
+      })
     },
     [user, view]
   )
@@ -183,7 +191,9 @@ function App() {
     (score: number) => {
       if (!user || view.kind !== 'falling') return
       recordFalling(user, view.lang, score)
-      void pushFalling({ user, lang: view.lang, score })
+      // Push the personal best so the board shows the true high score (and
+      // recovers scores from before the cloud rules/index existed).
+      void pushFalling({ user, lang: view.lang, score: getBestFalling(user, view.lang) })
     },
     [user, view]
   )

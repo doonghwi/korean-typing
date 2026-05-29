@@ -88,14 +88,21 @@ export const fetchTopSprints = async (
   n = 10
 ): Promise<CloudSprint[]> => {
   try {
+    // Append-only: a user has one doc per game played. Pull a wide window and
+    // keep only each user's best so one player can't fill every rank.
     const q = query(
       collection(db, SPRINTS),
       where('lang', '==', lang),
       orderBy('score', 'desc'),
-      limit(n)
+      limit(50)
     )
     const snap = await getDocs(q)
-    return snap.docs.map((d) => d.data() as CloudSprint)
+    const best = new Map<string, CloudSprint>()
+    for (const d of snap.docs) {
+      const r = d.data() as CloudSprint
+      if (!best.has(r.user)) best.set(r.user, r)
+    }
+    return [...best.values()].slice(0, n)
   } catch (err) {
     console.warn('cloudRanking: fetch sprints failed', err)
     return []
@@ -126,14 +133,20 @@ export const fetchTopFallings = async (
   n = 10
 ): Promise<CloudFalling[]> => {
   try {
+    // One doc per game played — dedup to each user's best (see fetchTopSprints).
     const q = query(
       collection(db, FALLINGS),
       where('lang', '==', lang),
       orderBy('score', 'desc'),
-      limit(n)
+      limit(50)
     )
     const snap = await getDocs(q)
-    return snap.docs.map((d) => d.data() as CloudFalling)
+    const best = new Map<string, CloudFalling>()
+    for (const d of snap.docs) {
+      const r = d.data() as CloudFalling
+      if (!best.has(r.user)) best.set(r.user, r)
+    }
+    return [...best.values()].slice(0, n)
   } catch (err) {
     console.warn('cloudRanking: fetch fallings failed', err)
     return []

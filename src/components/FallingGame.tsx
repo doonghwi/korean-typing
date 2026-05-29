@@ -10,6 +10,7 @@ import {
 } from '../hangul'
 import { codeToKeyChar } from '../hangul/dubeolsik'
 import { fetchTopFallings, type CloudFalling } from '../storage/cloudRanking'
+import { getBestFalling } from '../storage/progress'
 import type { Lang } from '../lessons/sources'
 import './FallingGame.css'
 
@@ -42,29 +43,52 @@ const FallingLeaderboard = ({
   const [rows, setRows] = useState<CloudFalling[] | null>(null)
   useEffect(() => {
     let alive = true
-    fetchTopFallings(lang, 5).then((r) => {
-      if (alive) setRows(r)
-    })
+    const load = async () => {
+      const cloud = await fetchTopFallings(lang, 20)
+      if (!alive) return
+      // Always show my own best, even if the just-finished push is still in
+      // flight or never reached the cloud (rules/index not set up yet).
+      const myBest = getBestFalling(userName, lang)
+      const merged = [...cloud]
+      const idx = merged.findIndex((r) => r.user === userName)
+      if (myBest > 0) {
+        if (idx >= 0) {
+          if (myBest > merged[idx].score) merged[idx] = { ...merged[idx], score: myBest }
+        } else {
+          merged.push({ user: userName, lang, score: myBest, at: 0 })
+        }
+      }
+      merged.sort((a, b) => b.score - a.score)
+      setRows(merged.slice(0, 5))
+    }
+    void load()
     return () => {
       alive = false
     }
-  }, [lang])
+  }, [lang, userName])
 
-  if (rows === null) return <p className="fg-lb-empty">랭킹 불러오는 중…</p>
-  if (rows.length === 0) return null
+  if (rows === null || rows.length === 0) return null
+
+  // Standard competition ranking: ties share a rank, next entry skips ahead.
+  let displayRank = 0
+  let prevScore: number | null = null
 
   return (
     <ol className="fg-lb">
-      {rows.map((r, i) => (
-        <li
-          key={`${r.user}-${r.at}-${i}`}
-          className={`fg-lb-row${r.user === userName ? ' me' : ''}`}
-        >
-          <span className="fg-lb-rank">{i + 1}</span>
-          <span className="fg-lb-user">{r.user}</span>
-          <span className="fg-lb-score">{r.score}</span>
-        </li>
-      ))}
+      {rows.map((r, i) => {
+        if (prevScore === null || r.score !== prevScore) displayRank = i + 1
+        prevScore = r.score
+        return (
+          <li
+            key={`${r.user}-${r.at}-${i}`}
+            className={`fg-lb-row${r.user === userName ? ' me' : ''}`}
+          >
+            <span className="fg-lb-rank">{displayRank}</span>
+            <span className="fg-lb-user">{r.user}</span>
+            <span className="fg-lb-score">{r.score}</span>
+          </li>
+        )
+      })}
     </ol>
   )
 }
