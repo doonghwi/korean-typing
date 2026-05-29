@@ -151,13 +151,18 @@ export interface CloudStreak {
 // `lang` filter and the single-field `orderBy('streak')` index is automatic —
 // no composite index to create. Append-only: the score grows over time, so we
 // fetch a wide window and keep each user's highest entry (dedup on read).
+// Returns true only when the write actually lands, so callers can avoid marking
+// a streak as "already pushed" when the rules aren't published yet (the write
+// would fail and otherwise never retry).
 export const pushStreak = async (
   record: Omit<CloudStreak, 'at'>
-): Promise<void> => {
+): Promise<boolean> => {
   try {
     await addDoc(collection(db, STREAKS), { ...record, at: Date.now() })
+    return true
   } catch (err) {
     console.warn('cloudRanking: streak push failed', err)
+    return false
   }
 }
 

@@ -110,7 +110,7 @@ export const recordLine = (
   // A completed line may extend today's streak — keep the cloud leaderboard
   // in sync (no-op unless the best streak grew). Runs for every line, not just
   // ranking-eligible ones, since any practice day counts toward a streak.
-  syncStreakRanking(name)
+  void syncStreakRanking(name)
 
   if (!isRecordRankingEligible(source, text, accuracy)) return
   void pushRecord({
@@ -220,18 +220,23 @@ export const getStreak = (name: string): StreakInfo => {
   return { current, best, activeToday }
 }
 
-const streakPushedKey = (name: string) => `taza:user:${name}:streak-pushed`
+// v2: the v1 marker could get stuck if a push failed before the Firestore
+// rules were published (it was written before the push). Bumping the key makes
+// existing clients re-push once under the success-gated logic below.
+const streakPushedKey = (name: string) => `taza:user:${name}:streak-pushed-v2`
 
 // Push the user's best (longest-ever) streak to the cloud leaderboard, but only
 // when it grows past what we last sent — keeps the append-only `streaks`
-// collection from filling with duplicate same-value docs.
-export const syncStreakRanking = (name: string): void => {
+// collection from filling with duplicate same-value docs. The "already pushed"
+// marker is saved ONLY on a successful write, so a push blocked by missing
+// rules retries on the next call instead of silently giving up forever.
+export const syncStreakRanking = async (name: string): Promise<void> => {
   const best = getStreak(name).best
   if (best <= 0) return
   const pushed = readJson<number>(streakPushedKey(name)) ?? 0
   if (best <= pushed) return
-  writeJson(streakPushedKey(name), best)
-  void pushStreak({ user: name, streak: best })
+  const ok = await pushStreak({ user: name, streak: best })
+  if (ok) writeJson(streakPushedKey(name), best)
 }
 
 // ----- Per-key error stats (weak-key analysis) -----

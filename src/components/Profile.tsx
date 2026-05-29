@@ -260,11 +260,28 @@ const StreakLeaderboard = ({ userName }: { userName: string }) => {
   const [rows, setRows] = useState<CloudStreak[] | null>(null)
   useEffect(() => {
     let alive = true
-    // Make sure my own best streak is up on the board before we read it back.
-    syncStreakRanking(userName)
-    fetchTopStreaks(5).then((r) => {
-      if (alive) setRows(r)
-    })
+    const load = async () => {
+      // Push my best streak first, then read the board back.
+      await syncStreakRanking(userName)
+      const cloud = await fetchTopStreaks(20)
+      if (!alive) return
+      // Always surface my own streak, even if the push is still propagating or
+      // the cloud write failed — otherwise a solo player sees an empty board.
+      const myBest = getStreak(userName).best
+      const merged = [...cloud]
+      const mine = merged.findIndex((r) => r.user === userName)
+      if (myBest > 0) {
+        if (mine >= 0) {
+          if (myBest > merged[mine].streak)
+            merged[mine] = { ...merged[mine], streak: myBest }
+        } else {
+          merged.push({ user: userName, streak: myBest, at: 0 })
+        }
+      }
+      merged.sort((a, b) => b.streak - a.streak)
+      setRows(merged.slice(0, 5))
+    }
+    void load()
     return () => {
       alive = false
     }
