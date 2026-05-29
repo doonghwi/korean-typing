@@ -120,18 +120,80 @@ const SprintSummary = ({
   )
 }
 
+type SprintCharStatus = 'pending' | 'current' | 'correct' | 'wrong'
+interface TargetCh {
+  ch: string
+  status: SprintCharStatus
+}
+interface InputCh {
+  ch: string
+  status: 'correct' | 'wrong'
+}
+
+// Per-syllable status for Korean: a displayed character spans a jamo range
+// [start, end); it's wrong if any jamo in that range was mistyped.
+const koTargetChars = (
+  line: string,
+  boundaries: number[],
+  inputCount: number,
+  inputs: string[],
+  targetJamo: string[]
+): TargetCh[] =>
+  Array.from(line).map((ch, i) => {
+    const start = i === 0 ? 0 : boundaries[i - 1]
+    const end = boundaries[i]
+    let status: SprintCharStatus
+    if (inputCount < start) status = 'pending'
+    else if (inputCount < end) status = 'current'
+    else {
+      status = 'correct'
+      for (let j = start; j < end; j++) {
+        if (inputs[j] !== targetJamo[j]) {
+          status = 'wrong'
+          break
+        }
+      }
+    }
+    return { ch, status }
+  })
+
+// 1:1 status for English.
+const enTargetChars = (
+  targetChars: string[],
+  inputCount: number,
+  inputs: string[]
+): TargetCh[] =>
+  targetChars.map((ch, i) => {
+    let status: SprintCharStatus
+    if (i < inputCount) status = inputs[i] === ch ? 'correct' : 'wrong'
+    else if (i === inputCount) status = 'current'
+    else status = 'pending'
+    return { ch, status }
+  })
+
+// Colour the typed text by comparing it position-by-position to the target.
+const inputCharsOf = (rendered: string, line: string): InputCh[] =>
+  Array.from(rendered).map((ch, i) => ({
+    ch,
+    status: line[i] !== undefined && ch !== line[i] ? 'wrong' : 'correct',
+  }))
+
+const SprintCharSpan = ({ ch, status }: { ch: string; status: SprintCharStatus }) => (
+  <span className={`tch ${status}${ch === ' ' ? ' space' : ''}`}>
+    {ch === ' ' ? '·' : ch}
+  </span>
+)
+
 const SprintPlay = ({
   lang,
-  currentLine,
-  rendered,
-  cursorChar,
+  targetChars,
+  inputChars,
   remaining,
   totals,
 }: {
   lang: Lang
-  currentLine: string
-  rendered: string
-  cursorChar: number
+  targetChars: TargetCh[]
+  inputChars: InputCh[]
   remaining: number
   totals: Totals
 }) => (
@@ -139,18 +201,15 @@ const SprintPlay = ({
     <SprintHud remaining={remaining} totals={totals} />
     <div className="sprint-line">
       <div className="sprint-target" aria-label="목표">
-        {Array.from(currentLine).map((ch, i) => (
-          <span
-            key={i}
-            className={`tch ${i < cursorChar ? 'correct' : 'pending'}${ch === ' ' ? ' space' : ''}`}
-          >
-            {ch === ' ' ? '·' : ch}
-          </span>
+        {targetChars.map(({ ch, status }, i) => (
+          <SprintCharSpan key={i} ch={ch} status={status} />
         ))}
       </div>
       <div className="sprint-input" aria-label="입력 중">
-        {rendered.length > 0 ? (
-          rendered.replace(/ /g, '·')
+        {inputChars.length > 0 ? (
+          inputChars.map(({ ch, status }, i) => (
+            <SprintCharSpan key={i} ch={ch} status={status} />
+          ))
         ) : (
           <span className="placeholder">
             {lang === 'en' ? 'Start typing…' : '타이핑을 시작하세요…'}
@@ -159,7 +218,7 @@ const SprintPlay = ({
         <span className="caret" />
       </div>
     </div>
-    <p className="sprint-hint">1분 동안 최대한 많이! 줄은 자동으로 넘어갑니다.</p>
+    <p className="sprint-hint">정확히 입력해야 다음으로 넘어가요. 틀리면 빨갛게 표시 — 백스페이스로 고치세요.</p>
   </div>
 )
 
@@ -242,7 +301,7 @@ const SprintKo = ({
 }: SprintInnerProps) => {
   const [lineIdx, setLineIdx] = useState(0)
   const currentLine = lines.length > 0 ? lines[lineIdx % lines.length] : ''
-  const { state, derived, restart } = useTypingSession(currentLine)
+  const { state, derived, restart } = useTypingSession(currentLine, true)
 
   const { remaining, live, snapshot, resetEngine } = useSprintEngine(
     !!state.finishedAt,
@@ -273,9 +332,14 @@ const SprintKo = ({
   return (
     <SprintPlay
       lang="ko"
-      currentLine={currentLine}
-      rendered={derived.rendered}
-      cursorChar={derived.cursorChar}
+      targetChars={koTargetChars(
+        currentLine,
+        derived.boundaries,
+        state.inputCount,
+        state.inputs,
+        state.targetJamo
+      )}
+      inputChars={inputCharsOf(derived.rendered, currentLine)}
       remaining={remaining}
       totals={live}
     />
@@ -291,7 +355,7 @@ const SprintEn = ({
 }: SprintInnerProps) => {
   const [lineIdx, setLineIdx] = useState(0)
   const currentLine = lines.length > 0 ? lines[lineIdx % lines.length] : ''
-  const { state, derived, restart } = useEnglishSession(currentLine)
+  const { state, restart } = useEnglishSession(currentLine, true)
 
   const { remaining, live, snapshot, resetEngine } = useSprintEngine(
     !!state.finishedAt,
@@ -322,9 +386,8 @@ const SprintEn = ({
   return (
     <SprintPlay
       lang="en"
-      currentLine={currentLine}
-      rendered={state.inputs.join('')}
-      cursorChar={derived.cursorChar}
+      targetChars={enTargetChars(state.targetChars, state.inputCount, state.inputs)}
+      inputChars={inputCharsOf(state.inputs.join(''), currentLine)}
       remaining={remaining}
       totals={live}
     />

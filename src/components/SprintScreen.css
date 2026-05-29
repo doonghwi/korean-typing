@@ -89,6 +89,18 @@
   color: var(--correct);
 }
 
+.sprint-target .tch.current {
+  color: var(--text);
+  background: color-mix(in oklab, var(--accent) 22%, transparent);
+  border-radius: 0.2rem;
+}
+
+.sprint-target .tch.wrong {
+  color: var(--wrong);
+  background: color-mix(in oklab, var(--wrong) 22%, transparent);
+  border-radius: 0.2rem;
+}
+
 .sprint-target .tch.space {
   opacity: 0.4;
 }
@@ -99,6 +111,20 @@
   min-height: 1.6rem;
   border-top: 1px dashed var(--border);
   padding-top: 0.6rem;
+}
+
+.sprint-input .tch.correct {
+  color: var(--correct);
+}
+
+.sprint-input .tch.wrong {
+  color: var(--wrong);
+  background: color-mix(in oklab, var(--wrong) 22%, transparent);
+  border-radius: 0.2rem;
+}
+
+.sprint-input .tch.space {
+  opacity: 0.4;
 }
 
 .sprint-input .placeholder {

@@ -24,6 +24,9 @@ export interface SessionState {
   errorCount: number
   startedAt: number | null
   finishedAt: number | null
+  // When true, a line only finishes on a perfect match — typing the right
+  // number of jamo isn't enough. Used by the sprint to force 100% accuracy.
+  requirePerfect: boolean
 }
 
 type Action =
@@ -32,7 +35,7 @@ type Action =
   | { type: 'backspace' }
   | { type: 'restart'; target: string }
 
-const init = (target: string): SessionState => ({
+const init = (target: string, requirePerfect = false): SessionState => ({
   composer: initialState(),
   target,
   targetJamo: decomposeText(target),
@@ -41,10 +44,11 @@ const init = (target: string): SessionState => ({
   errorCount: 0,
   startedAt: null,
   finishedAt: null,
+  requirePerfect,
 })
 
 const reducer = (state: SessionState, action: Action): SessionState => {
-  if (action.type === 'restart') return init(action.target)
+  if (action.type === 'restart') return init(action.target, state.requirePerfect)
 
   if (action.type === 'backspace') {
     if (state.inputCount === 0) return state
@@ -77,7 +81,12 @@ const reducer = (state: SessionState, action: Action): SessionState => {
   const rendered = renderState(nextComposer)
   const reachedTargetCount = nextInputCount >= state.targetJamo.length
   const matchesTarget = rendered === state.target
-  const finishedAt = reachedTargetCount || matchesTarget ? Date.now() : null
+  // requirePerfect: only a perfect match advances; reaching the jamo count
+  // while wrong keeps the line open so the typist must fix it.
+  const finishedAt =
+    matchesTarget || (!state.requirePerfect && reachedTargetCount)
+      ? Date.now()
+      : null
 
   return {
     ...state,
@@ -147,8 +156,12 @@ export const deriveSession = (s: SessionState, now: number): SessionDerived => {
   }
 }
 
-export const useTypingSession = (target: string) => {
-  const [state, dispatch] = useReducer(reducer, target, init)
+export const useTypingSession = (target: string, requirePerfect = false) => {
+  const [state, dispatch] = useReducer(
+    reducer,
+    { target, requirePerfect },
+    ({ target, requirePerfect }) => init(target, requirePerfect)
+  )
   const stateRef = useRef(state)
   stateRef.current = state
 

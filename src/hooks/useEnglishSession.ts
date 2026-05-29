@@ -8,6 +8,8 @@ export interface EnglishSessionState {
   errorCount: number
   startedAt: number | null
   finishedAt: number | null
+  // See useTypingSession: when true a line only finishes on a perfect match.
+  requirePerfect: boolean
 }
 
 type Action =
@@ -15,7 +17,7 @@ type Action =
   | { type: 'backspace' }
   | { type: 'restart'; target: string }
 
-const init = (target: string): EnglishSessionState => ({
+const init = (target: string, requirePerfect = false): EnglishSessionState => ({
   target,
   targetChars: Array.from(target),
   inputs: [],
@@ -23,10 +25,11 @@ const init = (target: string): EnglishSessionState => ({
   errorCount: 0,
   startedAt: null,
   finishedAt: null,
+  requirePerfect,
 })
 
 const reducer = (state: EnglishSessionState, action: Action): EnglishSessionState => {
-  if (action.type === 'restart') return init(action.target)
+  if (action.type === 'restart') return init(action.target, state.requirePerfect)
 
   if (action.type === 'backspace') {
     if (state.inputCount === 0) return state
@@ -52,7 +55,11 @@ const reducer = (state: EnglishSessionState, action: Action): EnglishSessionStat
   const nextErrors = state.errorCount + (isCorrect ? 0 : 1)
   const startedAt = state.startedAt ?? Date.now()
   const reachedTargetCount = nextInputCount >= state.targetChars.length
-  const finishedAt = reachedTargetCount ? Date.now() : null
+  const matchesTarget = nextInputs.join('') === state.target
+  const finishedAt =
+    matchesTarget || (!state.requirePerfect && reachedTargetCount)
+      ? Date.now()
+      : null
 
   return {
     ...state,
@@ -99,8 +106,12 @@ export const deriveEnglishSession = (
   }
 }
 
-export const useEnglishSession = (target: string) => {
-  const [state, dispatch] = useReducer(reducer, target, init)
+export const useEnglishSession = (target: string, requirePerfect = false) => {
+  const [state, dispatch] = useReducer(
+    reducer,
+    { target, requirePerfect },
+    ({ target, requirePerfect }) => init(target, requirePerfect)
+  )
   const stateRef = useRef(state)
   stateRef.current = state
 
