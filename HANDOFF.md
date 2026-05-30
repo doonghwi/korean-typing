@@ -2,7 +2,7 @@
 
 > 다음 Claude Code 세션이 이 프로젝트를 이어받을 수 있도록 작성된 운영 문서.
 > 사용자: **doonghwi** (joyyoxyt@gmail.com).
-> 마지막 업데이트: 2026-05-17.
+> 마지막 업데이트: 2026-05-31.
 
 ---
 
@@ -11,47 +11,36 @@
 | 항목 | 값 |
 |---|---|
 | 작업 디렉토리 | `C:\dev\taza\korean-typing` |
-| 워크스페이스 | `C:\dev\taza` (`.omc` 세션 상태가 여기 있음 — gitignore됨) |
-| 운영체제 | Windows 11 Home, PowerShell 5.1 (`$null`, backtick 등 PS 문법 사용) |
-| Node | v24.14.1 |
-| npm | 11.11.0 |
-| Git | git for Windows 2.51 (Git Credential Manager 포함). **로컬 user.name/email 미설정** — 커밋할 때마다 `GIT_AUTHOR_*`/`GIT_COMMITTER_*` 환경변수로 `doonghwi <joyyoxyt@gmail.com>` 지정 |
-| GitHub CLI | `C:\dev\tools\gh\bin\gh.exe` (winget 없어서 portable zip 설치, user PATH에 추가됨) |
-
-`gh` CLI는 `doonghwi` 계정으로 인증 완료.
+| 워크스페이스 | `C:\dev\taza` (`.omc` 세션 상태 + 사용자에게 보낸 HTML 가이드가 여기 있음 — git 밖) |
+| 운영체제 | Windows 11 Home, PowerShell 5.1 (`$null`, backtick 등 PS 문법). bash 툴도 사용 가능 |
+| Node | v24.14.1 / npm 11.11.0 |
+| Git | git for Windows 2.51. **로컬 user.name/email 미설정** — 커밋마다 `GIT_AUTHOR_*`/`GIT_COMMITTER_*` 환경변수로 `doonghwi <joyyoxyt@gmail.com>` 지정 (12번 참고) |
+| GitHub CLI | `C:\dev\tools\gh\bin\gh.exe` (portable). `doonghwi` 계정 인증 완료 |
+| 원격 | `origin` → https://github.com/doonghwi/korean-typing.git (main) |
 
 ---
 
 ## 2. 기술 스택
 
-- **Vite 8** + **React 19** + **TypeScript** (verbatim module syntax 켜져 있음 → 타입 import는 `type` 키워드 필수)
-- **Vitest 4**: 한글 엔진 단위 테스트 (41개)
-- **Firebase 12 Firestore Lite**: 클라우드 랭킹 (실시간 리스너 미사용, 가벼움)
+- **Vite 8** + **React 19** + **TypeScript** (verbatim module syntax → 타입 import는 `type` 키워드 필수)
+- **Vitest 4**: 단위 테스트 **44개** (composer 33 + decompose 8 + position 3). 모두 통과 중
+- **Firebase 12 Firestore Lite**: 클라우드 랭킹 (실시간 리스너 미사용, 가벼움). 컬렉션 4개: `records`, `sprints`, `fallings`, `streaks`
 - **자체 한글 조합 엔진**: 두벌식, IME 우회. `src/hangul/`
-- **GitHub Pages**: GitHub Actions로 main 푸시 시 자동 배포 (`.github/workflows/deploy.yml`)
+- **영어 모드**: 한/영 토글. 영어는 1:1 문자 비교(조합 없음)
+- **GitHub Pages**: main 푸시 시 GitHub Actions 자동 배포 (`.github/workflows/deploy.yml`)
+- 번들: JS ~138KB gzipped (단어 풀 3배 확장으로 증가, Firebase ~33KB 포함)
 
 ---
 
 ## 3. 자주 쓰는 명령
 
 ```powershell
-# 작업 디렉토리로 이동 (필요시)
 Set-Location 'C:\dev\taza\korean-typing'
-
-# 의존성 설치
 npm install
-
-# 개발 서버 (http://localhost:5173/korean-typing/)
-npm run dev
-
-# 빌드 (TS 체크 + Vite 번들)
-npm run build
-
-# 한글 엔진 테스트
-npx vitest run
-
-# 배포는 main 푸시만 하면 자동
-git push   # → GitHub Actions deploy.yml 실행
+npm run dev          # http://localhost:5173/korean-typing/
+npm run build        # tsc -b + vite build (TS 체크 포함)
+npx vitest run       # 44개 테스트
+git push             # → GitHub Actions 자동 배포
 ```
 
 ---
@@ -61,297 +50,207 @@ git push   # → GitHub Actions deploy.yml 실행
 ```
 src/
   hangul/                  # 한글 조합 엔진 (IME 우회)
-    constants.ts           # CHO/JUNG/JONG 배열, VOWEL_COMBINE/SPLIT, JONG_COMBINE/SPLIT
-    composer.ts            # 자모 → 음절 상태머신 + 백스페이스
-    decompose.ts           # 음절·복합자모 → 자모 분해 (채점용)
-    dubeolsik.ts           # 두벌식 키맵 + codeToKeyChar(e.code, shift)
-    composer.test.ts       # vitest
-    decompose.test.ts      # vitest
-    index.ts               # re-exports + processKey(state, key)
+    constants.ts · composer.ts · decompose.ts · dubeolsik.ts · index.ts
+    composer.test.ts · decompose.test.ts
   hooks/
-    useTypingSession.ts    # 핵심 상태 훅: reducer, keydown 리스너, deriveSession
+    useTypingSession.ts    # 한글 타이핑 reducer/keydown. ★requirePerfect 옵션 있음
+    useEnglishSession.ts   # 영어 타이핑(1:1). ★requirePerfect 옵션 있음
+    useCountdown.ts        # 스프린트 60초 카운트다운
   components/
     UserPicker.tsx         # 첫 화면 (이름 선택/추가)
-    Profile.tsx            # 프로필 (3섹션 연습 진입 + 통계 + 랭킹 + 최근 기록)
-    TypingScreen.tsx       # 타이핑 화면 (한컴 스타일 prev/current/next pair)
-    Stats.tsx              # CPM/정확도/시간/오타 카드
-    Leaderboard.tsx        # Firestore 데이터 표시 (역대/오늘 탭)
-    keyboard/
-      Keyboard.tsx         # 가상 키보드 (다음 키 강조)
-      HandOverlay.tsx      # 손 모양 SVG 오버레이 (활성 키 방향으로 이동)
-      layout.ts            # KEYBOARD_ROWS, findKeyByChar, finger mapping
+    Profile.tsx            # 프로필: 연습 진입 + 통계 + streak 배너 + ★연속출석 랭킹 + 약점키 + 업적 + 랭킹 + 최근기록
+    TypingScreen.tsx       # 한글 타이핑 화면 (prev/current/next 3행)
+    TypingScreenEn.tsx     # 영어 타이핑 화면
+    SprintScreen.tsx       # 1분 스프린트 게임 (Ko/En) + 스프린트 랭킹
+    FallingGame.tsx        # 낙하 단어 게임 (rAF 루프) + 낙하 랭킹
+    Stats.tsx · Leaderboard.tsx (CPM 역대/오늘)
+    keyboard/ Keyboard.tsx · HandOverlay.tsx · layout.ts
   lessons/
-    types.ts               # PositionStage/PositionLesson/SentenceLesson 타입
-    data.ts                # POSITION_STAGES(7), WORDS(단일풀), SHORT_SENTENCES, LONG_PASSAGES, JAMO_LEVEL, wordRequiredStage, wordsAtLevel
-    sources.ts             # source 스킴 + 옵션 배열 + isSourceRankingEligible
+    types.ts
+    data.ts                # POSITION_STAGES(7) · WORD_BUCKETS · SHORT/LONG_SENTENCES · JAMO_LEVEL · wordsAtLevel
+    data-en.ts             # 영어 버전
+    data.position.test.ts  # ★자리연습 단계 제약 검증 테스트
+    sources.ts             # source 스킴, buildSprintPool/buildFallingPool, 랭킹 자격
   storage/
-    progress.ts            # localStorage (records, users, currentUser)
-    cloudRanking.ts        # Firestore CRUD (pushRecord, fetchTopRecords)
-  utils/
-    shuffle.ts             # Fisher-Yates
-  firebase.ts              # Firebase 초기화 (config + db)
-  App.tsx                  # 라우팅: pick-user → profile → session
-.github/workflows/deploy.yml  # 자동 배포
-vite.config.ts             # base: '/korean-typing/' + vitest 설정
+    progress.ts            # localStorage: records, streak, sprint/falling best, keystats. ★syncStreakRanking
+    cloudRanking.ts        # Firestore CRUD: records/sprints/fallings/streaks (push + dedup fetch)
+    achievements.ts        # 업적/뱃지 (저장 데이터에서 파생)
+  utils/shuffle.ts · firebase.ts · App.tsx
+firestore.rules            # ★보안 규칙 백업 (콘솔 게시는 수동, 8번 참고)
 ```
 
 ---
 
-## 5. 연습 구조 — 3섹션
+## 5. 화면 구성
 
-이전의 10단계 단일 드롭다운을 **자리/단어/문장 3섹션**으로 분리 (2026-05-17 재구성). 각 섹션은 Profile 카드에 자체 드롭다운 + 시작 버튼이 있음.
+`App.tsx` 라우팅: `pick-user` → `profile` → 세션(`typing`/`sprint`/`falling`).
 
-### 자리연습 (POSITION_STAGES, 1~7)
+**연습 3섹션** (Profile 카드): 자리연습 / 단어연습 / 문장연습. 각자 드롭다운 + 시작 버튼.
+**게임 2종**: 1분 스프린트 / 낙하게임 (6번).
+**한/영 토글**: 모든 섹션·게임이 ko/en 지원.
 
-| # | 제목 | 키/자모 |
-|---|---|---|
-| 1 | 기본자리 | A S D F · J K L (ㅁ ㄴ ㅇ ㄹ · ㅓ ㅏ ㅣ) |
-| 2 | 왼손 윗자리 | Q W E R T (ㅂ ㅈ ㄷ ㄱ ㅅ) |
-| 3 | 왼손 아랫자리 | Z X C V B (ㅋ ㅌ ㅊ ㅍ ㅠ) |
-| 4 | 가운데자리 | G H (ㅎ ㅗ) |
-| 5 | 오른손 윗자리 | Y U I O P (ㅛ ㅕ ㅑ ㅐ ㅔ) |
-| 6 | 오른손 아랫자리 | N M (ㅜ ㅡ) |
-| 7 | 전체자리 | 복합 모음 · 쌍자음 · 겹받침 |
-
-각 단계는 `자모 → 받침 없는 글자 → 받침 있는 글자`(7단계는 복합모음·쌍자음·ㅆ받침·겹받침) 레슨으로 구성. **단어 레슨은 모두 제거** — 단어연습 섹션으로 이동.
-
-소스: `position-1` ~ `position-7`. 시작하면 해당 단계의 모든 레슨 라인 풀해서 셔플.
+### 자리연습 (POSITION_STAGES 1~7)
+단계별로 **그 단계까지 배운 자모만** 사용. 자모 → 받침없는 → 받침있는 (7단계는 복합모음·쌍자음·ㅆ받침·겹받침).
+**제약 규칙**: 줄 하나가 N단계에 유효하려면 `wordRequiredStage(line) ≤ N`. 복합모음·겹받침은 base jamo로 분해 평가됨(조합기가 자동 합성). `data.position.test.ts`가 이 제약을 자동 검증.
 
 ### 단어연습 (WORDS 단일 풀, 단계별 필터)
+`WORD_BUCKETS`를 dedup한 `WORDS` 배열(현재 **약 2,295개**). `wordRequiredStage(word)`로 단어를 단계별로 자동 분류, `wordsAtLevel(N)`은 N단계까지 칠 수 있는 단어 반환. **단어엔 제약 없음** — 아무 일반 단어나 추가 가능(자동 레벨링).
 
-`WORDS`: 모든 단어 중복 제거된 단일 배열. 주제별 그룹 없음 (사용자가 주제별 불필요하다고 함).
-
-**난이도 라벨**: `wordRequiredStage(word)`가 단어를 분해해서 가장 늦은 jamo의 단계를 반환 (`JAMO_LEVEL` 맵 기반). `wordsAtLevel(N)`은 N단계까지 키로 칠 수 있는 단어들만 반환 (앱 부팅 시 한 번 계산, O(1) 조회).
-
-**JAMO_LEVEL 매핑**:
-- 1단계: ㅁ ㄴ ㅇ ㄹ · ㅓ ㅏ ㅣ
-- 2단계: ㅂ ㅈ ㄷ ㄱ ㅅ
-- 3단계: ㅋ ㅌ ㅊ ㅍ · ㅠ
-- 4단계: ㅎ ㅗ
-- 5단계: ㅛ ㅕ ㅑ ㅐ ㅔ
-- 6단계: ㅜ ㅡ
-- 7단계: ㄲ ㄸ ㅃ ㅆ ㅉ (쌍자음 — Shift 필요)
-- 복합 모음/겹받침은 분해 후 base jamo 단계로 평가됨 (조합기가 자동 합성)
-
-소스: `words-1` ~ `words-6`, `words-all` (= 7단계까지). 드롭다운에는 "1단계까지" ~ "6단계까지", "전체".
-
-### 문장연습 (랭킹 등록 대상)
-
-| 종류 | 소스 | 데이터 |
-|---|---|---|
-| 짧은 문장 | `sentences-short` | `SHORT_SENTENCES` 12 레슨, 각 7~10문장 |
-| 긴 글 | `sentences-long` | `LONG_PASSAGES` 13 레슨, 각 5~6 문장 |
-
-드롭다운은 **2 옵션만**. 시작하면 해당 카테고리의 모든 라인을 풀해서 셔플 (레슨 단위 선택 없음).
-
-**랭킹**: `isRecordRankingEligible(source, text)` 기준.
-- `sentences-short` / `sentences-long`: 항상 true
-- `words-*`: `text.trim().length >= 2` 이면 true (1글자 단어 제외)
-- `position-*`: 항상 false (자리연습은 짧아서 CPM 왜곡)
-
-랭킹 자격이 있는 레코드만 cloud push (`pushRecord`) + 로컬의 `getTodayBest`/`getAllTimeBest` 집계에 포함. 모든 줄은 로컬 progress에 저장 (최근 기록 리스트는 자격 무관 노출).
-
-**미래 계획**: 긴글연습에 사용자 커스텀 글귀 추가/선택 기능 예정 (사용자가 "알아만 둬"로 언급). 커스텀이 추가되면 드롭다운에 `<optgroup>`으로 짧은/긴/내 글귀 그룹화하거나 별도 옵션. 저작권 이슈 때문에 사용자 본인 작성만 허용.
+### 문장연습 (랭킹 대상)
+짧은 문장(`SHORT_SENTENCES`) / 긴 글(`LONG_PASSAGES`). 드롭다운 2옵션, 전체 셔플.
 
 ---
 
-## 6. 콘텐츠 가이드라인 (중요)
+## 6. 게임 모드 & 클라우드 랭킹 ★이번 세션 핵심
 
-**모든 레슨 텍스트는 직접 작성한 원본 또는 일반 어휘**:
-- 자리연습 (1~7): 자모, 일반 음절, 사전 어휘 — 저작권 무관
-- 단어연습 (WORDS): 일반 명사 (음식·가족·자연 등 22 버킷에서 합쳐 dedup) — 저작권 무관
-- 문장연습 짧은 문장: 일상 표현, 스톡 인사말 (안녕하세요 등) + 직접 쓴 짧은 문장
-- 문장연습 긴 글: **모두 직접 작성한 원본 산문**. 시·가사·소설·노래 가사 일체 사용 안 함.
+### 1분 스프린트 (`SprintScreen.tsx`)
+- 60초 동안 단어/짧은문장을 최대한 많이. 풀 = `buildSprintPool` (전체 단어 + 짧은 문장).
+- **★완벽 입력 강제**: `useTypingSession/useEnglishSession`에 `requirePerfect=true`를 넘김 → 글자 수만 채워선 안 넘어가고 **완벽히 일치(`matchesTarget`)해야** 다음 줄. 틀리면 백스페이스로 고쳐야 함.
+- **★빨강 오타 표시**: 목표·입력 글자를 `correct/wrong/current/pending` 색으로(메인 화면과 동일 패턴). `koTargetChars`/`enTargetChars`/`inputCharsOf` 헬퍼가 상태 배열 생성.
+- 점수 = 정타 수(`inputCount - errorCount`). 영어는 `/5`로 단어 수 환산 표시.
 
-사용자가 가요·시 추가를 원했으나 저작권 문제로 거절. 한컴타자연습의 콘텐츠도 가져오지 않음. UI 패턴(prev/current/next 3행, 입력 박스 강조)만 참고.
+### 낙하 게임 (`FallingGame.tsx`)
+- 단어가 위에서 떨어짐. 입력 후 **Enter 또는 Space**로 제출(낙하 단어엔 공백 없음). 바닥 닿으면 목숨↓, 5개 소진 시 게임오버.
+- 풀 = `buildFallingPool` (공백 없는 2~4글자 ko / 2~7글자 en).
+- **★부드러운 낙하**: 게임 루프가 `requestAnimationFrame`(~60fps). 이동량은 실제 경과시간(dt) 기반이라 주사율 무관하게 속도 동일. (이전엔 50ms setInterval=20fps라 끊겼음)
+- 점수 = 제거한 단어 수.
+
+### 클라우드 랭킹 아키텍처 (`cloudRanking.ts`) — 4개 보드 공통 규칙
+append-only(수정/삭제 금지) Firestore라 아래 패턴으로 통일:
+1. **push best**: 게임/연습마다 현재 점수가 아니라 **개인 최고점**을 전송(`App.tsx` onSprintComplete/onFallingComplete, streak는 `syncStreakRanking`). → 보드가 진짜 최고 반영 + 규칙 게시 전 못 올린 기록도 다음 플레이에 복구.
+2. **dedup on read**: fetch는 wide window(limit 50)를 받아 **유저별 최고 1개만** 남김(`Map`). → 한 사람이 여러 줄 차지하는 버그 방지.
+3. **merge local best**: 리더보드 컴포넌트가 클라우드 결과에 **본인 로컬 최고점을 병합**. → push 전파 지연/실패에도 내 기록은 즉시 보임(race-proof).
+4. **동점 표준 순위(1·1·3)**: 같은 점수는 같은 등수, 다음은 인원수만큼 건너뜀. 모든 보드(streak/sprint/falling)에 적용.
+
+| 보드 | 컬렉션 | 점수 | 표시 위치 | 인덱스 |
+|---|---|---|---|---|
+| CPM | `records` | cpm | Profile 하단 (역대/오늘 탭) | (lang↑, cpm↓) |
+| 스프린트 | `sprints` | 정타 | 스프린트 종료 화면 TOP5 | (lang↑, score↓) |
+| 낙하 | `fallings` | 개수 | 게임오버 화면 TOP5 | (lang↑, score↓) |
+| **연속출석** | `streaks` | best streak(일) | **Profile streak 배너 아래 TOP5** | 불필요(단일 정렬) |
+
+**streak 랭킹 주의점** (`syncStreakRanking` in progress.ts):
+- 언어 무관(한/영 합산 출석). best streak = 역대 최장 연속일.
+- "전송됨" 마커는 **push 성공 시에만** 저장(`streak-pushed-v2` 키) → 규칙 게시 전 실패해도 다음에 재시도. 마커 키를 v2로 올려 과거 잘못 박힌 마커 무시.
+- recordLine + Profile 진입 시 호출됨.
 
 ---
 
 ## 7. localStorage 스키마
 
-```ts
-'taza:users'              // string[] : 등록된 이름들
-'taza:current-user'       // string : 현재 로그인 이름
-'taza:user:<name>:progress-v3' // UserProgress
 ```
-
-`UserProgress`:
-```ts
-{
-  records: LineRecord[]   // max 1000, FIFO
-}
-LineRecord = { at, source, cpm, accuracy, text }
+'taza:users'                         string[]
+'taza:current-user'                  string
+'taza:user:<name>:progress-v3'       { records: LineRecord[] (max 1000, FIFO) }
+'taza:user:<name>:lang'              'ko' | 'en'
+'taza:user:<name>:keystats:<lang>'   약점키 통계
+'taza:user:<name>:sprints'           SprintRecord[] (max 100)
+'taza:user:<name>:falling:<lang>'    number (최고 점수)
+'taza:user:<name>:streak-pushed-v2'  number (클라우드에 마지막으로 올린 best streak)
 ```
-
-**중요**: `recordLine`은 이제 **모든 단계의 기록을 로컬에 저장**. Cloud push만 `isSourceRankingEligible`로 게이트. 자리연습·단어연습도 프로필의 최근 기록·최고 타수에 반영됨.
-
-이전 버전 키 (`progress`, `progress-v2`)는 더 이상 안 읽음. v3 도입 시점에 사용자가 막 시작한 상태였어서 마이그레이션 안 함.
-
-`source` 필드 값:
-- `position-1` ~ `position-7` (자리)
-- `words-1` ~ `words-6`, `words-all` (단어)
-- `sentences-short`, `sentences-long` (문장)
-- 옛 레코드: `stage-N` (재구성 이전 사용자 기록, 그대로 유지)
+`recordLine`은 **모든 단계 기록을 로컬 저장**. Cloud push만 `isRecordRankingEligible`(랭킹자격 + 정확도 100%)로 게이트.
 
 ---
 
-## 8. Firestore 설정
+## 8. Firestore 설정 ★중요
 
 | 항목 | 값 |
 |---|---|
-| 프로젝트 ID | `korean-typing-3118c` |
-| 위치 | asia-northeast3 (서울) |
-| Config 파일 | `src/firebase.ts` (공개 안전, 보안은 Rules로) |
-| 컬렉션 | `records` |
-| 보안 규칙 | ✅ 적용됨 (사용자가 직접 게시) — cpm < 5000, user ≤ 30자, text ≤ 200자 등 검증 |
+| 프로젝트 ID | `korean-typing-3118c` (asia-northeast3 서울) |
+| Config | `src/firebase.ts` (공개 안전, 보안은 Rules로) |
+| 컬렉션 | `records`, `sprints`, `fallings`, `streaks` |
 
-문서 스키마 (`records/<auto-id>`):
-```ts
-{
-  user: string      // 1~30자
-  source: string    // 'sentences-short' | 'sentences-long' | (legacy: 'stage-9'/'stage-10')
-  cpm: number       // 0~5000
-  accuracy: number  // 0~1
-  text: string      // 1~200자
-  at: number        // Date.now()
-}
-```
+### ⚠️ 규칙·인덱스는 콘솔에서 수동 적용
+이 프로젝트는 GitHub Pages 배포만 쓰고 `firebase deploy`를 **안 씀**. `firestore.rules` 파일은 **백업일 뿐 자동 적용 안 됨**. 새 컬렉션/규칙은 **콘솔에 직접 게시**해야 함:
+- 규칙: [콘솔 → Firestore → 규칙 탭](https://console.firebase.google.com/project/korean-typing-3118c/firestore/rules)에 `firestore.rules` 내용 붙여넣고 게시.
+- **복합 인덱스**: sprints/fallings 쿼리(`where(lang)+orderBy(score)`)는 인덱스 필요. 게임 한 판 돌리면 F12 콘솔에 `The query requires an index. You can create it here: …` 링크가 뜸 → 클릭해서 생성. **streaks는 단일 정렬이라 불필요.**
+- 사용자(doonghwi)가 2026-05-31 시점 규칙 게시 + sprints/fallings 인덱스 생성 완료.
 
-쿼리:
-- 역대 TOP 10: `orderBy('cpm', 'desc').limit(10)` — 단일 필드 인덱스, 자동
-- 오늘 TOP 10: top 50 가져와서 클라이언트에서 `at >= startOfToday` 필터
+규칙은 누구나 읽기, 검증된 create만, update/delete 금지. (cpm<5000, score≤100000, streak≤100000, user≤30자 등 검증)
 
 ---
 
 ## 9. 한글 엔진 핵심 동작
 
-**키 입력 → 자모 매핑**: `e.code` (`KeyR`) 기반 → IME 영향 없음. 한국어 키보드 모드에서도 OK.
-
-**조합기 상태**: `{ committed: string, working: { L?, V?, T? } }`. 작동 음절을 working에 쌓고, 다음 자모가 안 맞으면 working을 committed로 commit하고 새 working 시작.
-
-**백스페이스**: 한 번 = 자모 하나 제거 (committed 음절도 분해 후 마지막 자모 제거). `inputs[]`와 정확히 1:1 매핑되어 위치 정렬 유지.
-
-**자모 분해 (decomposeText)**: 음절뿐 아니라 **단독 복합 자모(ㅚ, ㅞ, ㅘ, ㄳ, ㅄ 등)도 분해**해서 base jamo 시퀀스로 변환. `computeBoundaries`도 같은 규칙 사용. 이전엔 단독 복합자모가 분해 안 돼서 `targetJamo` 길이 1로 잡혀 첫 base jamo 입력 순간 세션이 종료되는 버그가 있었음 (`aa36b36`).
-
-**채점**:
-- `inputs[i] === targetJamo[i]` 비교 (자모 단위 위치 비교)
-- 한 자모라도 틀린 글자는 빨간색 표시
-- 완료 조건: `inputCount >= targetJamo.length` (틀려도 전부 치면 다음으로) OR `rendered === target` (완벽)
-
-**완료 후 백스페이스**: reducer의 backspace 처리는 `finishedAt` 가드를 우회. 완료된 줄에서 백스페이스 누르면 마지막 자모를 지우고 `finishedAt: null`로 unfinish. 사용자가 잘못 친 글자 수정 가능.
-
-**줄 결과 저장 시점**: `state.finishedAt`이 truthy가 되는 순간이 아니라 **Enter/Space (다음 줄)** 누를 때 `setLineResults` push + `onLineComplete` 호출. 백스페이스 후 재완료해도 중복 저장 없음. TypingScreen의 `advanceRef.current` 패턴 사용.
-
-**리터럴 입력**: 마침표·쉼표·숫자 등은 `e.key.length === 1` fallback으로 `inputLiteral` 호출. 공백도 동일. 목표에 마침표 같은 구두점이 있을 때 `expectedToKeyChar`가 jamo 변환 실패 시 원본 문자 그대로 사용 → `findKeyByChar('.')`가 layout의 Period 키 매칭.
-
-**테스트 41개**: composer 33 + decompose 8. 모두 통과 중. 한글 엔진 수정 시 반드시 `npx vitest run`.
+- **키→자모**: `e.code`(`KeyR`) 기반 → IME 무관.
+- **조합기 상태**: `{ committed, working:{L?,V?,T?} }`. 다음 자모 안 맞으면 commit 후 새 working.
+- **백스페이스**: 자모 하나씩 제거. `inputs[]`와 1:1 정렬.
+- **분해(decomposeText)**: 음절 + 단독 복합자모(ㅚㅞㅘㄳㅄ 등)도 base jamo로 분해. 채점/`computeBoundaries`/`wordRequiredStage` 공통.
+- **채점**: `inputs[i] === targetJamo[i]` 위치 비교. 틀린 글자 빨강.
+- **줄 완료 조건**: `inputCount >= targetJamo.length`(틀려도 진행) **또는** `rendered === target`(완벽). ★`requirePerfect=true`면 **완벽 일치일 때만** 완료(스프린트 전용).
+- **줄 결과 저장**: finishedAt 순간이 아니라 Enter/Space(다음 줄) 시 push. `advanceRef` 패턴.
+- **★띄어쓰기 표시**: 공백을 가운데점(`·`)으로 찍던 것을 제거 → `.tch.space { display:inline-block; width:0.45em }` 빈 칸. 틀린 공백은 `.tch.wrong` 배경색으로 빨갛게. (메인 ko/en + 스프린트 전부)
+- **테스트**: 한글 엔진 수정 시 반드시 `npx vitest run`.
 
 ---
 
-## 10. 알려진 이슈 / 미해결
+## 10. 콘텐츠 가이드라인 (중요)
 
-- **iPad 키보드 종속성**: 외장 키보드 필수. 화면 키보드는 IME 우회 불가. README에 명시됨.
-- **이름 도용 가능**: Firebase Auth 없음. 누구나 아무 이름으로 기록 등록 가능. 3명 신뢰 기반이라 OK.
-- **bundle size**: 111KB gzipped (Firebase가 +33KB 차지). 추가 최적화 가능하나 현재 충분.
-- **세벌식 미지원**: 두벌식 전용. 추가하려면 `src/hangul/dubeolsik.ts` 옆에 키맵 추가 + 사용자 설정.
-- **단어 레벨 추정의 한계**: `wordRequiredStage`는 base jamo 단계 max를 보므로 `값`(ㅂㅅ 겹받침)이 2단계로 잡힘. 자판 키 기준으로는 맞지만 "겹받침 개념을 모르는 2단계 사용자"가 보면 어려울 수 있음. 실용적으로 큰 문제 아님.
-- **미래 작업: 커스텀 긴글**: 사용자가 직접 작성한 긴 글귀를 추가하고 드롭다운에서 선택 가능하게 (사용자가 "알아만 둬"로 언급). localStorage 저장 방향. 5번 섹션 끝 참고.
+**모든 레슨 텍스트는 직접 작성 원본 또는 일반 어휘** — 저작권 있는 시·가사·소설 일절 금지. 사용자가 가요·시 추가 원했으나 거절함. 한컴타자 콘텐츠도 안 가져옴(UI 패턴만 참고).
+- 단어연습/게임 풀: 일반 명사·동사·형용사. 2026-05-31에 ~50개 주제 버킷 추가로 **WORDS 757→2295개(3배)**.
+- 자리연습: 단계 제약 음절/단어. **390→1049줄(2.7배)**. 초기 단계는 허용 자모 조합 한계로 3배 못 채움(예: 1단계 받침없는글자 = 자음4×모음3=12개가 상한).
 
 ---
 
 ## 11. 자주 하는 작업
 
-### 새 자리 단계 추가
-1. `src/lessons/data.ts`의 `POSITION_STAGES` 배열에 새 객체 추가
-2. `JAMO_LEVEL`에 새로 등장하는 jamo 등록 (단어 레벨 계산에 필요)
-3. `WORD_OPTIONS`도 `MAX_WORD_LEVEL` 상수 따라가니까 필요시 상수 갱신
-4. Profile, sources.ts는 자동 반영
+- **단어 추가**: `data.ts`의 `WORD_BUCKETS`에 추가 → `WORDS_SET` 자동 dedup, 레벨 자동 계산. 낙하/스프린트/단어연습 동시 반영.
+- **문장 추가**: `SHORT_SENTENCES` / `LONG_PASSAGES`에 `SentenceLesson` 추가.
+- **자리연습 줄 추가**: 해당 단계 lesson `lines`에 추가. **반드시 `wordRequiredStage ≤ 단계` 지킬 것** — 어기면 `data.position.test.ts`가 빨강. (위반 줄·레벨을 메시지로 알려줌)
+- **새 자리 단계**: `POSITION_STAGES` + `JAMO_LEVEL`(새 jamo 등록) + 필요시 `MAX_WORD_LEVEL`.
+- **랭킹/게임 추가**: cloudRanking에 push(best)/fetch(dedup) 함수 추가 + 컴포넌트에서 merge-local + 동점순위 패턴 따르기. Firestore 규칙·인덱스 콘솔 게시 잊지 말 것.
 
-### 새 단어 추가
-- `src/lessons/data.ts`의 `WORD_BUCKETS`에 추가 (또는 새 버킷 배열 추가)
-- `WORDS_SET`이 자동 dedup, `WORDS_BY_LEVEL`도 자동 재계산
-
-### 문장/긴글 추가
-- `src/lessons/data.ts`의 `SHORT_SENTENCES` 또는 `LONG_PASSAGES`에 새 `SentenceLesson` 객체 추가
-- 시작하면 해당 카테고리 전체 풀에 자동 합쳐짐 (개별 선택은 없음)
-
-### 두벌식 키맵 수정
-- `src/hangul/dubeolsik.ts`의 `DUBEOLSIK` 객체
-- 변경 시 composer 테스트 재실행 권장
-
-### 손 모양 조정
-- `src/components/keyboard/HandOverlay.tsx`
-- `SHIFT_FACTOR = 0.55` (활성 키 방향으로 손 이동 비율)
-- `FINGER_HOME` 객체: 각 손가락 기준 위치 (viewBox 100×60)
-
-### Firestore 보안 규칙 수정
-- Firebase 콘솔 → Firestore Database → 규칙 탭
-- 현재 규칙은 `firestore.rules` 파일로 백업 안 되어 있음 — 콘솔에서 직접 확인
-- 마지막 적용된 규칙 요지: 누구나 읽기, create만 허용 (update/delete 금지), 필드 검증 강제
-
-### gh CLI 명령
+### gh CLI
 ```powershell
 & 'C:\dev\tools\gh\bin\gh.exe' run list --repo doonghwi/korean-typing --limit 5
-& 'C:\dev\tools\gh\bin\gh.exe' run view <run-id> --repo doonghwi/korean-typing --log-failed
-& 'C:\dev\tools\gh\bin\gh.exe' workflow run deploy.yml --repo doonghwi/korean-typing --ref main
+& 'C:\dev\tools\gh\bin\gh.exe' run view <id> --repo doonghwi/korean-typing --log-failed
 ```
 
 ---
 
 ## 12. 커밋 컨벤션
 
-git config user 미설정이므로 환경변수로 지정 (PowerShell):
-```powershell
-$env:GIT_AUTHOR_NAME='doonghwi'; $env:GIT_AUTHOR_EMAIL='joyyoxyt@gmail.com'
-$env:GIT_COMMITTER_NAME='doonghwi'; $env:GIT_COMMITTER_EMAIL='joyyoxyt@gmail.com'
-git commit -m "..."
-```
-
-또는 한 줄 (bash):
+git user 미설정 → 환경변수로 지정 (bash 한 줄):
 ```bash
 GIT_AUTHOR_NAME=doonghwi GIT_AUTHOR_EMAIL=joyyoxyt@gmail.com \
 GIT_COMMITTER_NAME=doonghwi GIT_COMMITTER_EMAIL=joyyoxyt@gmail.com \
 git commit -m "..."
 ```
-
-메시지는 영어/한국어 혼용 OK. `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>` 트레일러 붙임.
-
-`.gitignore`에 `.omc`, `.claude` 추가됨 (OMC 로컬 상태 제외).
+메시지 영/한 혼용 OK. 트레일러: `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`.
+`.gitignore`에 `.omc`, `.claude` 포함. (CRLF 경고는 무시 — Windows 정상)
 
 ---
 
 ## 13. 사용자 컨텍스트 요약
 
-- **doonghwi** (joyyoxyt@gmail.com), 한국 사용자
-- 3명 이하 친구·가족용 비공식 사용
-- TypingClub의 한글 미지원 + iPad 무료 앱 부재를 동기로 시작
-- 백엔드 단순함 선호 (Firebase 무료 한도로 충분)
-- 한컴타자연습 스타일 UX 선호 (3줄 prev/current/next, 빨간 오타 표시 등)
-- 작업 진행 방식: 단계별 확인보다는 "그냥 다 해줘" 방향 (autopilot 선호하지만 큰 결정은 확인 받음)
-- UI 깔끔함 중시: 곁가지 정보(예: 옆에 단어 개수 표시) 같은 건 안 좋아함
+- **doonghwi** (joyyoxyt@gmail.com), 한국 사용자. 친구·가족 3명 이하 비공식 사용.
+- 백엔드 단순함 선호(Firebase 무료 한도). 한컴타자 스타일 UX 선호.
+- 진행 방식: "그냥 다 해줘" 선호하되 **큰 결정/제품 방향은 확인**받기. 곁가지 정보 싫어함, UI 깔끔함 중시.
+- **산출물 규칙(전역)**: 사용자가 *읽어보길 부탁*한 자료(보고서·가이드·비교)는 **HTML로 작성 + SendUserFile(proactive)**. 작업 내부 로그·spec(이 HANDOFF.md 등)은 md OK. 채팅 내 즉시 토론/결정 질문은 채팅 그대로 OK.
 
 ---
 
-## 14. 핸드오프 시점 라이브 상태
+## 14. 라이브 상태 (2026-05-31)
 
-- 최근 커밋:
-  - `7445d95` — 단어연습 2글자+ 랭킹 등록 (로컬 + cloud)
-  - `f12345c` — 키보드에 `, . /` 추가 + 쌍자음 Shift 새끼손가락 시각화
-  - `d9335b0` — 완료 후 백스페이스 가능 + 결과 저장은 Enter/Space로 지연
-  - `e2dea2d` — HANDOFF docs 갱신
-  - `a342759` — 문장연습 두 옵션만 두고 전체 셔플
-  - `ce6f2f0` — 3섹션 재구성 / `aa36b36` — 복합자모 입력 버그 픽스
-- 모든 변경사항 push됨 (working tree clean)
-- 41개 테스트 통과 중
-- 빌드 OK (111KB gzipped)
-- 라이브 사이트 정상 동작 확인됨
-- 사용자가 iPad에서도 동작 확인 완료
-- Firestore 보안 규칙 적용 완료
+이번 세션 주요 커밋(최신순):
+- `a83d778` 자리/단어 풀 3배 확장 + 제약 검증 테스트 (data.position.test.ts)
+- `69f6631` '제 이름은 둥희입니다' 문장 삭제
+- `4098eb7` 띄어쓰기 점(·) 제거 → 빈 칸
+- `de3d128` 낙하 rAF 부드럽게 + 단어/문장 풀 1차 보강
+- `17f9d59` 게임 랭킹 유저별 dedup + 최고점 push + 동점순위
+- `e2913dc` 스프린트 빨강 오타 표시 + 완벽입력(requirePerfect)
+- `0a056bc` streak 랭킹 가시성 픽스(성공시만 마커 + merge)
+- `c11452b` 연속출석(streak) 클라우드 랭킹 신규
+- `83629c9` 낙하 제출 Enter+Space
 
-다음 세션에서 일을 이어갈 때:
-1. 이 문서를 먼저 읽고 컨텍스트 파악
-2. `git log --oneline -20`으로 최근 작업 확인
-3. `npm run dev`로 로컬 확인 후 작업 시작
-4. `npx vitest run`으로 한글 엔진 깨지지 않았는지 검증
+상태:
+- 모든 변경 push됨(working tree clean), GitHub Actions 자동 배포 성공.
+- 테스트 44개 통과, 빌드 OK.
+- Firestore 규칙 + sprints/fallings 인덱스 콘솔 게시 완료(사용자 확인).
+- ⚠️ 다른 사람이 **업데이트된 사이트에 접속**해야 그 사람 점수/streak가 랭킹에 등록됨(현재는 사용자 본인 위주).
 
-문제 생기면 사용자에게 한국어로 짧고 명확하게 보고. 디버깅은 차분히 — 자모 정렬·위치 추적 관련 버그가 흔함 (`inputs[] ↔ composer` 정렬).
+다음 세션:
+1. 이 문서 + `git log --oneline -20` 확인
+2. `npm run dev` / `npx vitest run`로 시작
+3. 자리연습·랭킹·한글 정렬 관련은 차분히 — 자모 정렬·위치 추적 버그가 흔함
+4. 사용자에게 한국어로 짧고 명확하게 보고
