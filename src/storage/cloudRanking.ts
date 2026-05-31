@@ -200,6 +200,14 @@ export const fetchTopStreaks = async (n = 10): Promise<CloudStreak[]> => {
   }
 }
 
+// "Today" board: do NOT reuse the cpm-ordered top-N window and then filter by
+// date. Once enough all-time-high records accumulate, the top-50-by-cpm window
+// fills with past records and today's (typically lower) scores fall outside it,
+// so the date filter drops them and the board looks empty — that was the
+// "오늘 랭킹이 반영 안 됨" bug. Instead pull the most RECENT records (today's are
+// by definition the newest), then filter to today + this lang and sort by cpm
+// on the client. orderBy('at') is a single-field index (automatic), so this
+// needs no composite index published in the console.
 export const fetchTodayTopRecords = async (
   lang: Lang,
   n = 10
@@ -210,14 +218,16 @@ export const fetchTodayTopRecords = async (
     const todayMs = today.getTime()
     const q = query(
       collection(db, RECORDS),
-      where('lang', '==', lang),
-      orderBy('cpm', 'desc'),
-      limit(50)
+      orderBy('at', 'desc'),
+      limit(300)
     )
     const snap = await getDocs(q)
     return snap.docs
       .map((d) => d.data() as CloudRecord)
-      .filter((r) => r.at >= todayMs)
+      .filter(
+        (r) => r.at >= todayMs && (r.lang ?? langOfSource(r.source)) === lang
+      )
+      .sort((a, b) => b.cpm - a.cpm)
       .slice(0, n)
   } catch (err) {
     console.warn('cloudRanking: fetch today failed', err)
